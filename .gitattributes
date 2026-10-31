@@ -1,0 +1,14 @@
+# Konce řádků držíme na LF všude, ať Windows nedělá zbytečné rozdíly.
+* text=auto eol=lf
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.gif  binary
+*.avif binary
+*.ico  binary
+
+# Dávkové soubory jsou jen pro Windows a cmd.exe chce CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf

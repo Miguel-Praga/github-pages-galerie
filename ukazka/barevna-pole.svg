@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000"><title>Barevná pole</title><defs>
+<filter id="a" x="-25%" y="-25%" width="150%" height="150%">
+<feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="12" result="s"/>
+<feDisplacementMap in="SourceGraphic" in2="s" scale="26" xChannelSelector="R" yChannelSelector="G"/>
+<feGaussianBlur stdDeviation="0.8"/>
+</filter>
+<filter id="m" x="-25%" y="-25%" width="150%" height="150%">
+<feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="2" seed="19" result="s"/>
+<feDisplacementMap in="SourceGraphic" in2="s" scale="40" xChannelSelector="R" yChannelSelector="G"/>
+<feGaussianBlur stdDeviation="6"/>
+</filter>
+<filter id="p" x="0" y="0" width="100%" height="100%">
+<feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" seed="15"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0.35  0 0 0 0 0.3  0 0 0 0 0.25  0 0 0 -1.6 1.15"/>
+</filter>
+</defs><rect width="1000" height="1000" fill="#f7f1e6"/><rect width="1000" height="1000" fill="#c0442c" fill-opacity="0.85" filter="url(#m)"/><rect x="110" y="110" width="780" height="420" fill="#e9973c" fill-opacity="0.85" filter="url(#m)"/><rect x="110" y="590" width="780" height="300" fill="#5a1d1a" fill-opacity="0.8" filter="url(#m)"/><rect x="150" y="150" width="700" height="340" fill="#f1b350" fill-opacity="0.4" filter="url(#m)"/><rect width="1000" height="1000" filter="url(#p)" opacity="0.5"/></svg>

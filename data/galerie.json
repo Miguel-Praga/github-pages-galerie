@@ -1,0 +1,272 @@
+{
+  "format": 1,
+  "nastaveni": {
+    "nazev": "Malá galerie",
+    "podtitul": "Obrazy, kresby a akvarely",
+    "autorka": "Jméno autorky",
+    "uvod": "Malé okno do ateliéru. Krajiny, květiny i barevné hry — malované akvarelem, akrylem a vším, co bylo zrovna po ruce.",
+    "oAutorce": "Sem patří pár vět o autorce: co ji na malování baví, čím maluje nejradši a odkud bere nápady.\n\nText i fotku změníte ve Správě v části Nastavení.",
+    "portret": "",
+    "email": "",
+    "telefon": "",
+    "instagram": "",
+    "repo": "Miguel-Praga/galerie",
+    "vetev": "",
+    "vzhled": { "styl": "papir", "rezim": "auto", "akcent": "", "pismo": "klasicke", "ramy": "zadne", "velikost": "stredni" },
+    "obchod": {
+      "zapnuto": true,
+      "ucet": "",
+      "prijemce": "",
+      "hotove": true,
+      "doprava": [
+        {
+          "nazev": "Osobní převzetí v Praze",
+          "cena": 0,
+          "adresa": false
+        },
+        {
+          "nazev": "Zásilkovna na výdejní místo",
+          "cena": 89,
+          "adresa": true
+        },
+        {
+          "nazev": "Česká pošta – balík do ruky",
+          "cena": 159,
+          "adresa": true
+        }
+      ],
+      "podminky": "Originály jsou vždy jen jednou — kdo pošle objednávku dřív, toho je. Do dvou dnů se ozveme e-mailem, potvrdíme, že je obraz váš, a domluvíme předání.\n\nObrazy balíme pečlivě do kartonu a bublinkové fólie. Při osobním převzetí můžete platit i hotově."
+    }
+  },
+  "dila": [
+    {
+      "id": "uk01ls",
+      "nazev": "Podzimní les",
+      "rok": "2026",
+      "technika": "akvarel na papíře",
+      "rozmer": "30 × 40 cm",
+      "serie": "Krajiny",
+      "popis": "Les za domem v polovině října, kdy buky hoří a vzduch voní houbami.\n\nMalováno mokrým do mokrého, aby se barvy samy rozlévaly.",
+      "stav": "prodej",
+      "cena": 2400,
+      "tisk": {
+        "cena": 350,
+        "popis": "A4, matný fine-art papír"
+      },
+      "zverejneno": true,
+      "doporucene": true,
+      "pridano": "2026-10-28",
+      "obrazky": [
+        {
+          "velky": "ukazka/podzimni-les.svg",
+          "nahled": "ukazka/podzimni-les.svg",
+          "sirka": 900,
+          "vyska": 1200
+        }
+      ],
+      "ukazka": true
+    },
+    {
+      "id": "uk02mo",
+      "nazev": "Moře za bouřky",
+      "rok": "2026",
+      "technika": "akryl na plátně",
+      "rozmer": "70 × 45 cm",
+      "serie": "Krajiny",
+      "popis": "Vzpomínka na prázdniny. Den, kdy se nedalo koupat, ale dívat se dalo celé odpoledne.",
+      "stav": "rezervovano",
+      "cena": 4800,
+      "tisk": null,
+      "zverejneno": true,
+      "doporucene": false,
+      "pridano": "2026-10-20",
+      "obrazky": [
+        {
+          "velky": "ukazka/more-za-bourky.svg",
+          "nahled": "ukazka/more-za-bourky.svg",
+          "sirka": 1400,
+          "vyska": 900
+        }
+      ],
+      "ukazka": true
+    },
+    {
+      "id": "uk03mk",
+      "nazev": "Vlčí máky",
+      "rok": "2025",
+      "technika": "kvaš na papíře",
+      "rozmer": "40 × 30 cm",
+      "serie": "Květiny",
+      "popis": "Pole u cesty na chatu.",
+      "stav": "prodano",
+      "cena": 1900,
+      "tisk": {
+        "cena": 290,
+        "popis": "A4, matný papír"
+      },
+      "zverejneno": true,
+      "doporucene": false,
+      "pridano": "2025-07-02",
+      "obrazky": [
+        {
+          "velky": "ukazka/vlci-maky.svg",
+          "nahled": "ukazka/vlci-maky.svg",
+          "sirka": 1200,
+          "vyska": 900
+        }
+      ],
+      "ukazka": true
+    },
+    {
+      "id": "uk04nm",
+      "nazev": "Noční město",
+      "rok": "2025",
+      "technika": "akryl na plátně",
+      "rozmer": "40 × 50 cm",
+      "serie": "Město",
+      "popis": "Okna, za kterými ještě někdo nespí.",
+      "stav": "prodej",
+      "cena": 3200,
+      "tisk": null,
+      "zverejneno": true,
+      "doporucene": false,
+      "pridano": "2025-11-14",
+      "obrazky": [
+        {
+          "velky": "ukazka/nocni-mesto.svg",
+          "nahled": "ukazka/nocni-mesto.svg",
+          "sirka": 1000,
+          "vyska": 1250
+        }
+      ],
+      "ukazka": true
+    },
+    {
+      "id": "uk05bp",
+      "nazev": "Barevná pole",
+      "rok": "2025",
+      "technika": "akryl na plátně",
+      "rozmer": "50 × 50 cm",
+      "serie": "Abstrakce",
+      "popis": "Pokus o to, jak dlouho se dá dívat na tři barvy.",
+      "stav": "vystaveno",
+      "cena": null,
+      "tisk": null,
+      "zverejneno": true,
+      "doporucene": false,
+      "pridano": "2025-05-30",
+      "obrazky": [
+        {
+          "velky": "ukazka/barevna-pole.svg",
+          "nahled": "ukazka/barevna-pole.svg",
+          "sirka": 1000,
+          "vyska": 1000
+        }
+      ],
+      "ukazka": true
+    },
+    {
+      "id": "uk06sl",
+      "nazev": "Slunečnice",
+      "rok": "2025",
+      "technika": "akvarel na papíře",
+      "rozmer": "30 × 40 cm",
+      "serie": "Květiny",
+      "popis": "Kytice od babičky, než stihla zvadnout.",
+      "stav": "prodej",
+      "cena": 2100,
+      "tisk": {
+        "cena": 350,
+        "popis": "A4, matný fine-art papír"
+      },
+      "zverejneno": true,
+      "doporucene": false,
+      "pridano": "2025-08-21",
+      "obrazky": [
+        {
+          "velky": "ukazka/slunecnice.svg",
+          "nahled": "ukazka/slunecnice.svg",
+          "sirka": 900,
+          "vyska": 1150
+        }
+      ],
+      "ukazka": true
+    },
+    {
+      "id": "uk07ml",
+      "nazev": "Ranní mlha",
+      "rok": "2024",
+      "technika": "akvarel na papíře",
+      "rozmer": "60 × 32 cm",
+      "serie": "Krajiny",
+      "popis": "Kopce se ráno skládají za sebe jako kulisy v divadle.",
+      "stav": "vystaveno",
+      "cena": null,
+      "tisk": {
+        "cena": 420,
+        "popis": "panoráma 50 × 27 cm"
+      },
+      "zverejneno": true,
+      "doporucene": false,
+      "pridano": "2024-10-05",
+      "obrazky": [
+        {
+          "velky": "ukazka/ranni-mlha.svg",
+          "nahled": "ukazka/ranni-mlha.svg",
+          "sirka": 1500,
+          "vyska": 800
+        }
+      ],
+      "ukazka": true
+    },
+    {
+      "id": "uk08ct",
+      "nazev": "Citrony na modrém",
+      "rok": "2024",
+      "technika": "olej na plátně",
+      "rozmer": "35 × 28 cm",
+      "serie": "Zátiší",
+      "popis": "První olej. Citrony vydržely modelem tři dny.",
+      "stav": "prodej",
+      "cena": 2900,
+      "tisk": null,
+      "zverejneno": true,
+      "doporucene": false,
+      "pridano": "2024-03-12",
+      "obrazky": [
+        {
+          "velky": "ukazka/citrony.svg",
+          "nahled": "ukazka/citrony.svg",
+          "sirka": 1100,
+          "vyska": 900
+        }
+      ],
+      "ukazka": true
+    },
+    {
+      "id": "uk09kr",
+      "nazev": "Kruhy",
+      "rok": "2024",
+      "technika": "kombinovaná technika",
+      "rozmer": "45 × 37 cm",
+      "serie": "Abstrakce",
+      "popis": "Hra s kružítkem, které se nechtělo poslouchat.",
+      "stav": "vystaveno",
+      "cena": null,
+      "tisk": null,
+      "zverejneno": true,
+      "doporucene": false,
+      "pridano": "2024-01-08",
+      "obrazky": [
+        {
+          "velky": "ukazka/kruhy.svg",
+          "nahled": "ukazka/kruhy.svg",
+          "sirka": 1100,
+          "vyska": 900
+        }
+      ],
+      "ukazka": true
+    }
+  ],
+  "upraveno": "2026-10-31T13:40:29.575Z"
+}

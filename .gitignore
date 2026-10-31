@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Rozpracované zápisy z vyvoj.py (kdyby spadl uprostřed)
+.zapis-*
+
+# Editory a systém
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.claude/
+
+# Jen pro správce, do veřejného repa nepatří
+NAVOD.md
+nahraj.cmd
+nahraj.ps1

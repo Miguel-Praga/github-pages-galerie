@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Titulek a popis přepisuje Správa při uložení nastavení (kvůli náhledům odkazů). -->
+<title>Malá galerie</title>
+<meta name="description" content="Obrazy, kresby a akvarely">
+<meta property="og:title" content="Malá galerie">
+<meta property="og:description" content="Obrazy, kresby a akvarely">
+<meta property="og:type" content="website">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/web.css">
+<script src="js/vzhled.js"></script>
+<script src="js/zaklad.js" defer></script>
+<script src="js/qr.js" defer></script>
+<script src="js/web.js" defer></script>
+</head>
+<body>
+<a class="preskocit" href="#galerie">Přeskočit na galerii</a>
+
+<header class="hlavicka">
+  <div class="hlavicka-vnitrek">
+    <a class="znak" href="#" data-nazev>Malá galerie</a>
+    <nav class="menu" aria-label="Hlavní nabídka">
+      <a href="#galerie">Galerie</a>
+      <a href="#o-autorce" data-o-autorce>O autorce</a>
+      <a href="#nakup" data-obchod hidden>Jak nakoupit</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
+    <button class="kosik-tlacitko" type="button" data-obchod hidden aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12l-1.2 11.1a2 2 0 0 1-2 1.9H9.2a2 2 0 0 1-2-1.9z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>
+      <span>Košík</span>
+      <span class="pocet" data-pocet hidden>0</span>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="uvod" aria-labelledby="uvod-nadpis">
+    <div class="uvod-text">
+      <p class="nadtitulek" data-autorka></p>
+      <h1 id="uvod-nadpis" data-nazev>Malá galerie</h1>
+      <p class="podtitul" data-podtitul></p>
+      <div class="uvod-odstavce" data-uvod></div>
+      <a class="tlacitko" href="#galerie">Prohlédnout obrazy</a>
+    </div>
+    <figure class="uvod-obraz" data-vybrane hidden></figure>
+  </section>
+
+  <section id="galerie" class="sekce" aria-labelledby="galerie-nadpis">
+    <div class="sekce-hlava">
+      <h2 id="galerie-nadpis">Galerie</h2>
+      <div class="filtry" role="toolbar" aria-label="Filtr galerie" data-filtry></div>
+    </div>
+    <div class="mrizka" data-mrizka aria-live="polite"></div>
+    <p class="prazdne" data-prazdne hidden>Tady zatím nic není — galerie se právě připravuje.</p>
+    <noscript><p class="prazdne">Galerie potřebuje zapnutý JavaScript.</p></noscript>
+  </section>
+
+  <section id="o-autorce" class="sekce o-autorce" aria-labelledby="autorka-nadpis" hidden>
+    <figure class="portret" data-portret hidden></figure>
+    <div>
+      <h2 id="autorka-nadpis">O autorce</h2>
+      <div class="text" data-o-autorce-text></div>
+      <p class="odkazy" data-odkazy-autorky></p>
+    </div>
+  </section>
+
+  <section id="nakup" class="sekce nakup" aria-labelledby="nakup-nadpis" data-obchod hidden>
+    <h2 id="nakup-nadpis">Jak nakoupit</h2>
+    <ol class="kroky">
+      <li><strong>Vyberte si</strong><span>Obraz nebo tisk vložte do košíku.</span></li>
+      <li><strong>Pošlete objednávku</strong><span>Odejde e-mailem, nic se neplatí předem.</span></li>
+      <li><strong>Počkejte na potvrzení</strong><span>Ozveme se, že je dílo vaše, a domluvíme předání.</span></li>
+      <li><strong>Zaplaťte</strong><span data-zpusob-platby>Převodem na účet — stačí naskenovat QR kód.</span></li>
+    </ol>
+    <div class="text" data-podminky></div>
+  </section>
+</main>
+
+<footer id="kontakt" class="paticka">
+  <div class="paticka-vnitrek">
+    <div>
+      <p class="paticka-nazev" data-nazev>Malá galerie</p>
+      <p class="paticka-kontakt" data-kontakt></p>
+    </div>
+    <p class="paticka-drobne"><span data-copyright></span> · <a href="sprava/" rel="nofollow">správa</a></p>
+  </div>
+</footer>
+
+<!-- Detail díla -->
+<dialog class="detail" id="detail" aria-labelledby="detail-nazev">
+  <div class="detail-obal">
+    <div class="detail-obraz" data-detail-obraz>
+      <img alt="" data-detail-img>
+      <button class="sipka predchozi" type="button" data-predchozi aria-label="Předchozí dílo">‹</button>
+      <button class="sipka dalsi" type="button" data-dalsi aria-label="Další dílo">›</button>
+      <div class="detail-miniatury" data-miniatury></div>
+    </div>
+    <div class="detail-info">
+      <button class="zavrit" type="button" data-zavrit aria-label="Zavřít">×</button>
+      <p class="serie" data-detail-serie></p>
+      <h2 id="detail-nazev" data-detail-nazev></h2>
+      <p class="udaje" data-detail-udaje></p>
+      <div class="text" data-detail-popis></div>
+      <div class="nabidka" data-detail-nabidka></div>
+      <p class="detail-odkazy">
+        <a href="#" data-zeptat hidden>Zeptat se na dílo e-mailem</a>
+        <button class="odkaz" type="button" data-sdilet>Kopírovat odkaz</button>
+      </p>
+    </div>
+  </div>
+</dialog>
+
+<!-- Košík a objednávka -->
+<dialog class="kosik" id="kosik" aria-labelledby="kosik-nadpis">
+  <div class="kosik-obal">
+    <header class="kosik-hlava">
+      <h2 id="kosik-nadpis">Košík</h2>
+      <button class="zavrit" type="button" data-zavrit aria-label="Zavřít">×</button>
+    </header>
+    <div class="kosik-krok" data-krok="polozky">
+      <ul class="polozky" data-polozky></ul>
+      <p class="prazdne" data-kosik-prazdny>Košík je prázdný.</p>
+      <form class="objednavka" data-formular novalidate>
+        <fieldset data-doprava>
+          <legend>Doprava</legend>
+        </fieldset>
+        <fieldset data-platba>
+          <legend>Platba</legend>
+        </fieldset>
+        <fieldset>
+          <legend>Kontakt</legend>
+          <label><span>Jméno a příjmení</span> <input name="jmeno" autocomplete="name" required></label>
+          <label><span>E-mail</span> <input name="email" type="email" autocomplete="email" required></label>
+          <label><span>Telefon <span class="nepovinne">· nepovinné</span></span> <input name="telefon" type="tel" autocomplete="tel"></label>
+          <label data-adresa hidden><span>Doručovací adresa <span class="nepovinne">· nebo výdejní místo</span></span> <textarea name="adresa" rows="3" autocomplete="street-address"></textarea></label>
+          <label><span>Poznámka <span class="nepovinne">· nepovinné</span></span> <textarea name="poznamka" rows="2"></textarea></label>
+        </fieldset>
+        <div class="soucet">
+          <span>Celkem</span>
+          <strong data-celkem></strong>
+        </div>
+        <p class="chyba" data-chyba role="alert" hidden></p>
+        <button class="tlacitko plne" type="submit">Pokračovat k odeslání</button>
+        <p class="drobne">Údaje použijeme jen k vyřízení objednávky.</p>
+      </form>
+    </div>
+    <div class="kosik-krok" data-krok="odeslat" hidden>
+      <p class="upozorneni"><strong>Ještě jeden krok:</strong> objednávka odejde, až odešlete e-mail.</p>
+      <a class="tlacitko plne" data-mailto href="#">Odeslat objednávku e-mailem</a>
+      <p class="drobne" data-zalozni-postup>Nepovedlo se otevřít poštu? <button class="odkaz" type="button" data-kopirovat>Zkopírujte text</button> a pošlete ho na <a data-email-prodejce href="#"></a>.</p>
+      <p class="chyba" data-bez-emailu hidden>Galerie zatím nemá vyplněný kontaktní e-mail, objednávku tedy nejde odeslat.</p>
+      <pre class="rekapitulace" data-rekapitulace></pre>
+      <div class="platebni" data-platebni></div>
+      <div class="kosik-dole">
+        <button class="odkaz" type="button" data-zpet>← Zpět k úpravám</button>
+        <button class="tlacitko" type="button" data-hotovo>Hotovo, vyprázdnit košík</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<div class="oznameni" data-oznameni role="status" hidden></div>
+</body>
+</html>

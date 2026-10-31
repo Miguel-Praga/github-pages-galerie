@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Správa galerie</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob: https://raw.githubusercontent.com; style-src 'self'; script-src 'self'; connect-src 'self' https://api.github.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../css/sprava.css">
+<script src="../js/zaklad.js" defer></script>
+<script src="../js/qr.js" defer></script>
+<script src="../js/sprava-uloziste.js" defer></script>
+<script src="../js/sprava.js" defer></script>
+</head>
+<body>
+
+<!-- ======================= přihlášení ======================= -->
+<section class="prihlaseni" data-prihlaseni hidden>
+  <div class="prihlaseni-karta">
+    <p class="nadtitulek">Správa</p>
+    <h1 data-nazev-webu>Galerie</h1>
+
+    <form data-form-lokalni hidden>
+      <p class="info">Běží <strong>lokální náhled</strong> ze složky na disku. Změny se uloží rovnou do souborů a na web se dostanou až s dalším nahráním do repozitáře.</p>
+      <button class="tl plne siroke" type="submit">Vstoupit do správy</button>
+    </form>
+
+    <form data-form-ucet hidden>
+      <label>Jméno
+        <input name="jmeno" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      </label>
+      <label>Heslo
+        <input type="password" name="heslo" autocomplete="current-password" required>
+      </label>
+      <button class="tl plne siroke" type="submit">Přihlásit</button>
+      <p class="odkazy-pod">
+        <button class="odkaz" type="button" data-prepnout="klic">Přihlásit přístupovým klíčem</button>
+      </p>
+    </form>
+
+    <form data-form-heslo hidden>
+      <p class="info">Na tomhle zařízení je uložený přístup k <strong data-ulozene-repo></strong>.</p>
+      <label>Heslo
+        <input type="password" name="heslo" autocomplete="current-password" required>
+      </label>
+      <button class="tl plne siroke" type="submit">Přihlásit</button>
+      <p class="odkazy-pod">
+        <button class="odkaz" type="button" data-jiny-klic>Přihlásit jiným klíčem</button>
+        <button class="odkaz" type="button" data-zapomenout>Zapomenout toto zařízení</button>
+        <button class="odkaz" type="button" data-prepnout="ucet" data-jsou-ucty hidden>Přihlásit jménem a heslem</button>
+      </p>
+    </form>
+
+    <form data-form-klic hidden>
+      <label>Repozitář na GitHubu
+        <input name="repo" placeholder="uzivatel/galerie" autocomplete="off" spellcheck="false" required>
+      </label>
+      <label>Přístupový klíč
+        <input type="password" name="klic" placeholder="github_pat_…" autocomplete="off" spellcheck="false" required>
+      </label>
+      <label class="zaskrt"><input type="checkbox" name="pamatovat"> Zapamatovat na tomto zařízení</label>
+      <div class="heslo-nove" data-heslo-nove hidden>
+        <label>Heslo pro toto zařízení
+          <input type="password" name="heslo" autocomplete="new-password" minlength="6">
+        </label>
+        <label>Heslo ještě jednou
+          <input type="password" name="heslo2" autocomplete="new-password">
+        </label>
+        <p class="napoveda">Klíč se uloží zašifrovaný tímhle heslem jen v tomhle prohlížeči. Příště stačí heslo.</p>
+      </div>
+      <button class="tl plne siroke" type="submit">Přihlásit</button>
+      <p class="odkazy-pod" data-jsou-ucty hidden>
+        <button class="odkaz" type="button" data-prepnout="ucet">Přihlásit jménem a heslem</button>
+      </p>
+      <details class="navod">
+        <summary>Kde vzít přístupový klíč</summary>
+        <ol>
+          <li>Na GitHubu otevřete <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Settings → Developer settings → Fine-grained tokens → Generate new token</a>.</li>
+          <li>Pojmenujte ho třeba „Správa galerie“, platnost dejte rok.</li>
+          <li><em>Repository access</em>: <strong>Only select repositories</strong> a vyberte repozitář galerie.</li>
+          <li><em>Permissions → Repository permissions → Contents</em>: <strong>Read and write</strong>. Nic dalšího není potřeba.</li>
+          <li>Klíč zkopírujte sem. GitHub ho ukáže jen jednou.</li>
+        </ol>
+        <p>Klíč umí měnit jen tenhle jeden repozitář. Kdyby se ztratil, na stejném místě ho jedním kliknutím zrušíte.</p>
+      </details>
+    </form>
+
+    <p class="chyba" data-chyba-prihlaseni role="alert" hidden></p>
+  </div>
+</section>
+
+<!-- ======================= aplikace ======================= -->
+<div class="aplikace" data-aplikace hidden>
+  <header class="lista">
+    <div class="lista-nazev">
+      <strong data-nazev-webu>Galerie</strong>
+      <span class="rezim" data-rezim></span>
+    </div>
+    <nav class="zalozky" role="tablist" aria-label="Části správy">
+      <button type="button" role="tab" data-zalozka="dila" aria-selected="true">Díla <span class="pocitadlo" data-pocet-del></span></button>
+      <button type="button" role="tab" data-zalozka="vzhled" aria-selected="false">Vzhled</button>
+      <button type="button" role="tab" data-zalozka="nastaveni" aria-selected="false">Nastavení</button>
+      <button type="button" role="tab" data-zalozka="ucty" aria-selected="false" data-jen-admin>Účty</button>
+    </nav>
+    <div class="lista-akce">
+      <span class="stav-ulozeni" data-stav-ulozeni></span>
+      <button class="tl" type="button" data-zahodit hidden>Zahodit</button>
+      <button class="tl plne" type="button" data-zverejnit disabled>Zveřejnit změny</button>
+      <a class="tl" href="../" target="_blank" rel="noopener">Web ↗</a>
+      <button class="tl tiche" type="button" data-zmenit-heslo hidden>Změnit heslo</button>
+      <button class="tl tiche" type="button" data-odhlasit>Odhlásit</button>
+    </div>
+  </header>
+
+  <main class="obsah">
+    <!-- díla -->
+    <section data-panel="dila">
+      <div class="pruh" data-ukazky hidden>
+        <span>V galerii jsou <strong>ukázková díla</strong>, ať je vidět, jak web vypadá. Až nahrajete vlastní, ukázky odstraňte.</span>
+        <button class="tl" type="button" data-smazat-ukazky>Odstranit ukázky</button>
+      </div>
+      <label class="nahravani" data-nahravani>
+        <input type="file" accept="image/*" multiple data-soubory>
+        <span class="nahravani-ikona" aria-hidden="true">+</span>
+        <span><strong>Přidat díla</strong><br>Přetáhněte sem fotky obrazů nebo klikněte a vyberte. Z každé fotky vznikne nové dílo.</span>
+      </label>
+      <p class="napoveda" data-napoveda-poradi>Pořadí na webu měníte přetažením karet.</p>
+      <ul class="seznam" data-seznam></ul>
+    </section>
+
+    <!-- nastavení -->
+    <section data-panel="nastaveni" hidden>
+      <form class="nastaveni" data-nastaveni novalidate>
+        <fieldset>
+          <legend>Web</legend>
+          <div class="radek2">
+            <label>Název webu <input name="nazev" required></label>
+            <label>Jméno autorky <input name="autorka"></label>
+          </div>
+          <label>Podtitul <input name="podtitul" placeholder="Obrazy, kresby a akvarely"></label>
+          <label>Úvodní text <span class="napoveda">pár vět pod nadpisem</span>
+            <textarea name="uvod" rows="3"></textarea>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>O autorce</legend>
+          <div class="portret-volba">
+            <div class="portret-nahled" data-portret-nahled></div>
+            <div>
+              <label class="tl">Nahrát portrét <input type="file" accept="image/*" data-portret-soubor hidden></label>
+              <button class="odkaz" type="button" data-portret-smazat hidden>odebrat</button>
+            </div>
+          </div>
+          <label>Text o autorce <span class="napoveda">odstavce oddělte prázdným řádkem</span>
+            <textarea name="oAutorce" rows="6"></textarea>
+          </label>
+          <div class="radek3">
+            <label>E-mail <span class="napoveda">sem chodí objednávky</span> <input name="email" type="email"></label>
+            <label>Telefon <input name="telefon" type="tel"></label>
+            <label>Instagram <input name="instagram" placeholder="@ucet"></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Obchod</legend>
+          <label class="zaskrt prepinac"><input type="checkbox" name="obchod.zapnuto"> Zapnout prodej (ceny, košík a objednávky e-mailem)</label>
+          <div class="obchod-pole" data-obchod-pole>
+            <div class="radek2">
+              <label>Číslo účtu <input name="obchod.ucet" placeholder="123456789/0800" autocomplete="off"></label>
+              <label>Jméno majitele účtu <input name="obchod.prijemce"></label>
+            </div>
+            <div class="ucet-kontrola" data-ucet-kontrola></div>
+            <label class="zaskrt"><input type="checkbox" name="obchod.hotove"> Nabízet i platbu hotově při převzetí</label>
+            <div class="doprava">
+              <p class="popisek">Způsoby předání</p>
+              <ul data-doprava></ul>
+              <button class="tl" type="button" data-pridat-dopravu>+ Přidat způsob</button>
+            </div>
+            <label>Jak nakupovat <span class="napoveda">ukáže se na webu v části „Jak nakoupit“</span>
+              <textarea name="obchod.podminky" rows="5"></textarea>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset data-jen-admin>
+          <legend>Pokročilé</legend>
+          <div class="radek2">
+            <label>Repozitář <input name="repo" placeholder="uzivatel/galerie" spellcheck="false"></label>
+            <label>Větev <input name="vetev" placeholder="main" spellcheck="false"></label>
+          </div>
+          <p class="napoveda">Kam správa zapisuje. Vyplňte před přechodem na vlastní doménu — tam se repozitář z adresy poznat nedá.</p>
+        </fieldset>
+      </form>
+    </section>
+
+    <!-- vzhled -->
+    <section data-panel="vzhled" hidden>
+      <div class="vzhled">
+        <form class="nastaveni" data-vzhled novalidate>
+          <fieldset>
+            <legend>Styl</legend>
+            <div class="styly" data-styly role="radiogroup" aria-label="Styl webu"></div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Barvy a písmo</legend>
+            <div class="volba">
+              <span class="popisek">Světlý a tmavý režim</span>
+              <div class="segment" role="radiogroup" aria-label="Režim">
+                <label><input type="radio" name="rezim" value="auto"> Podle zařízení</label>
+                <label><input type="radio" name="rezim" value="svetly"> Vždy světlý</label>
+                <label><input type="radio" name="rezim" value="tmavy"> Vždy tmavý</label>
+              </div>
+              <p class="napoveda" data-jen-tmavy hidden>Styl Tmavá stěna je vždy tmavý, režim se u něj neuplatní.</p>
+            </div>
+            <div class="volba akcent-volba">
+              <span class="popisek">Barva zvýraznění <span class="napoveda">tlačítka, odkazy, ceny</span></span>
+              <div class="akcent-radek">
+                <input type="color" name="akcent" aria-label="Barva zvýraznění">
+                <span class="akcent-stav" data-akcent-stav></span>
+                <button class="odkaz" type="button" data-akcent-vychozi>vrátit barvu stylu</button>
+              </div>
+            </div>
+            <div class="volba">
+              <span class="popisek">Písmo nadpisů</span>
+              <div class="pisma" data-pisma role="radiogroup" aria-label="Písmo nadpisů"></div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Galerie</legend>
+            <div class="volba">
+              <span class="popisek">Rámy obrazů</span>
+              <div class="segment" role="radiogroup" aria-label="Rámy obrazů">
+                <label><input type="radio" name="ramy" value="zadne"> Bez rámu</label>
+                <label><input type="radio" name="ramy" value="pasparta"> Pasparta</label>
+                <label><input type="radio" name="ramy" value="stin"> Stín</label>
+              </div>
+            </div>
+            <div class="volba">
+              <span class="popisek">Velikost náhledů</span>
+              <div class="segment" role="radiogroup" aria-label="Velikost náhledů">
+                <label><input type="radio" name="velikost" value="male"> Menší</label>
+                <label><input type="radio" name="velikost" value="stredni"> Střední</label>
+                <label><input type="radio" name="velikost" value="velke"> Větší</label>
+              </div>
+            </div>
+          </fieldset>
+        </form>
+
+        <aside class="nahled-obal" aria-label="Náhled vzhledu">
+          <div class="nahled-hlava">
+            <strong>Náhled</strong>
+            <div class="segment male" role="radiogroup" aria-label="Náhled ve světlém nebo tmavém režimu">
+              <label><input type="radio" name="nahledRezim" value="svetly"> Světlý</label>
+              <label><input type="radio" name="nahledRezim" value="tmavy"> Tmavý</label>
+            </div>
+          </div>
+          <div class="nahled-vzhledu" data-nahled-vzhledu></div>
+          <p class="napoveda">Na web se vzhled dostane tlačítkem Zveřejnit změny.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- účty -->
+    <section data-panel="ucty" hidden>
+      <div class="ucty">
+        <div class="pruh info">
+          <span>Účet = <strong>jméno a heslo</strong>, se kterými se do Správy přihlásíte z jakéhokoli zařízení.
+          Uvnitř účtu je zašifrovaný přístupový klíč ke GitHubu. <strong>Správkyně</strong> spravuje díla, texty, obchod a vzhled;
+          <strong>správce</strong> navíc účty a pokročilé nastavení.</span>
+        </div>
+        <ul class="ucty-seznam" data-ucty-seznam></ul>
+        <p class="napoveda" data-ucty-prazdne hidden>Zatím tu není žádný účet.</p>
+
+        <form class="nastaveni" data-ucet-formular novalidate>
+          <fieldset>
+            <legend data-ucet-nadpis>Nový účet</legend>
+            <div class="radek2">
+              <label>Přihlašovací jméno <span class="napoveda">malá písmena bez diakritiky</span>
+                <input name="jmeno" autocapitalize="none" spellcheck="false" autocomplete="off" placeholder="jana">
+              </label>
+              <label>Zobrazované jméno <input name="zobrazit" autocomplete="off" placeholder="Jana"></label>
+            </div>
+            <div class="volba">
+              <span class="popisek">Role</span>
+              <div class="segment" role="radiogroup" aria-label="Role">
+                <label><input type="radio" name="role" value="spravkyne" checked> Správkyně</label>
+                <label><input type="radio" name="role" value="admin"> Správce</label>
+              </div>
+            </div>
+            <div class="volba">
+              <span class="popisek">Dočasné heslo <span class="napoveda">aspoň 10 znaků; při prvním přihlášení si ho majitel účtu změní</span></span>
+              <div class="heslo-radek">
+                <input name="heslo" autocomplete="off" spellcheck="false">
+                <button class="tl" type="button" data-vygenerovat>Vygenerovat</button>
+              </div>
+            </div>
+            <div class="volba">
+              <span class="popisek">Přístupový klíč ke GitHubu</span>
+              <label class="zaskrt"><input type="radio" name="zdroj" value="novy" checked> Vložit nový klíč pro tenhle účet <span class="napoveda">(doporučeno — jde pak zrušit samostatně)</span></label>
+              <input type="password" name="klic" placeholder="github_pat_…" autocomplete="off" spellcheck="false" data-pole-klice>
+              <label class="zaskrt" data-muj-klic><input type="radio" name="zdroj" value="muj"> Použít klíč, se kterým jsem přihlášený</label>
+            </div>
+            <p class="chyba" data-ucet-chyba role="alert" hidden></p>
+            <div class="tlacitka">
+              <button class="tl plne" type="submit" data-ucet-ulozit>Vytvořit účet</button>
+              <button class="tl" type="button" data-ucet-zrusit hidden>Zrušit úpravu</button>
+            </div>
+          </fieldset>
+        </form>
+
+        <div class="predani" data-predani hidden>
+          <p><strong>Předejte majiteli účtu</strong> (osobně nebo zprávou, kterou nikdo jiný nečte):</p>
+          <pre data-predani-text></pre>
+          <button class="tl" type="button" data-predani-kopirovat>Zkopírovat</button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ======================= změna hesla ======================= -->
+<dialog class="editor male-okno" id="zmena-hesla" aria-labelledby="zmena-nadpis">
+  <form data-zmena-hesla novalidate>
+    <header class="editor-hlava">
+      <h2 id="zmena-nadpis">Změna hesla</h2>
+      <button class="zavrit" type="button" data-zavrit aria-label="Zavřít">×</button>
+    </header>
+    <div class="editor-telo jeden-sloupec">
+      <p class="pruh" data-zmena-duvod hidden>Účet má zatím dočasné heslo od správce. Nastavte si vlastní — bude ho znát jen vy.</p>
+      <input type="text" name="uzivatel" autocomplete="username" hidden>
+      <label>Nové heslo
+        <input type="password" name="heslo" autocomplete="new-password" required>
+      </label>
+      <label>Nové heslo ještě jednou
+        <input type="password" name="heslo2" autocomplete="new-password" required>
+      </label>
+      <p class="napoveda">Aspoň 10 znaků. Dobře se pamatuje pár slov za sebou, třeba „modrá-konvice-na-půdě“.</p>
+      <p class="chyba" data-zmena-chyba role="alert" hidden></p>
+    </div>
+    <footer class="editor-pata">
+      <button class="tl plne" type="submit">Uložit heslo</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- ======================= editor díla ======================= -->
+<dialog class="editor" id="editor" aria-labelledby="editor-nadpis">
+  <form data-editor novalidate>
+    <header class="editor-hlava">
+      <h2 id="editor-nadpis">Dílo</h2>
+      <button class="zavrit" type="button" data-zavrit aria-label="Zavřít">×</button>
+    </header>
+    <div class="editor-telo">
+      <div class="editor-obrazky">
+        <ul class="obrazky" data-obrazky></ul>
+        <label class="tl male">+ Další fotka (detail, rám…) <input type="file" accept="image/*" multiple data-dalsi-foto hidden></label>
+      </div>
+      <div class="editor-pole">
+        <label>Název <input name="nazev" required></label>
+        <div class="radek3">
+          <label>Rok <input name="rok" inputmode="numeric"></label>
+          <label>Technika <input name="technika" list="techniky" placeholder="akvarel na papíře"></label>
+          <label>Rozměr <input name="rozmer" placeholder="30 × 40 cm"></label>
+        </div>
+        <label>Série <span class="napoveda">podle ní se dá na webu filtrovat</span> <input name="serie" list="serie"></label>
+        <label>Popis <textarea name="popis" rows="5"></textarea></label>
+
+        <fieldset class="prodej" data-prodej>
+          <legend>Prodej</legend>
+          <div class="segment" role="radiogroup" aria-label="Stav originálu">
+            <label><input type="radio" name="stav" value="vystaveno"> Jen k vidění</label>
+            <label><input type="radio" name="stav" value="prodej"> Na prodej</label>
+            <label><input type="radio" name="stav" value="rezervovano"> Rezervováno</label>
+            <label><input type="radio" name="stav" value="prodano"> Prodáno</label>
+          </div>
+          <label class="kratke">Cena originálu (Kč) <input name="cena" type="number" min="0" step="50" inputmode="numeric"></label>
+          <label class="zaskrt"><input type="checkbox" name="tiskZapnuto"> Nabízet i tisky</label>
+          <div class="radek2" data-tisk-pole>
+            <label>Cena tisku (Kč) <input name="tiskCena" type="number" min="0" step="10" inputmode="numeric"></label>
+            <label>Popis tisku <input name="tiskPopis" placeholder="A4, matný fine-art papír"></label>
+          </div>
+          <p class="napoveda" data-obchod-vypnuty hidden>Prodej je v Nastavení vypnutý — ceny se na webu zatím neukazují.</p>
+        </fieldset>
+
+        <div class="zaskrtnuti">
+          <label class="zaskrt"><input type="checkbox" name="zverejneno"> Zobrazit na webu</label>
+          <label class="zaskrt"><input type="checkbox" name="doporucene"> Doporučené — ukázat na úvodu</label>
+        </div>
+      </div>
+    </div>
+    <footer class="editor-pata">
+      <button class="tl nebezpecne" type="button" data-smazat-dilo>Smazat dílo</button>
+      <span class="posun">
+        <button class="tl" type="button" data-posun="-1" aria-label="Posunout dopředu">←</button>
+        <button class="tl" type="button" data-posun="1" aria-label="Posunout dozadu">→</button>
+      </span>
+      <button class="tl plne" type="submit">Hotovo</button>
+    </footer>
+  </form>
+</dialog>
+
+<datalist id="serie"></datalist>
+<datalist id="techniky">
+  <option value="akvarel na papíře"></option>
+  <option value="akryl na plátně"></option>
+  <option value="olej na plátně"></option>
+  <option value="kvaš na papíře"></option>
+  <option value="pastel"></option>
+  <option value="tužka a pastelky"></option>
+  <option value="tuš"></option>
+  <option value="kombinovaná technika"></option>
+</datalist>
+
+<!-- ======================= ukládání ======================= -->
+<div class="ukladani" data-ukladani hidden>
+  <div class="ukladani-karta" role="status">
+    <p data-ukladani-text>Ukládám…</p>
+    <div class="ukazatel"><span data-ukladani-pruh></span></div>
+  </div>
+</div>
+
+<div class="oznameni" data-oznameni role="status" hidden></div>
+</body>
+</html>

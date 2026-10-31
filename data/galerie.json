@@ -3,9 +3,9 @@
   "nastaveni": {
     "nazev": "Malá galerie",
     "podtitul": "Obrazy, kresby a akvarely",
-    "autorka": "Jméno autorky",
+    "autorka": "Estetia Luna",
     "uvod": "Malé okno do ateliéru. Krajiny, květiny i barevné hry — malované akvarelem, akrylem a vším, co bylo zrovna po ruce.",
-    "oAutorce": "Sem patří pár vět o autorce: co ji na malování baví, čím maluje nejradši a odkud bere nápady.\n\nText i fotku změníte ve Správě v části Nastavení.",
+    "oAutorce": "Má tvorba je má vášeň.",
     "portret": "",
     "email": "",
     "telefon": "",
@@ -275,5 +275,5 @@
       "ukazka": true
     }
   ],
-  "upraveno": "2026-10-31T17:51:58.445Z"
+  "upraveno": "2026-10-31T18:30:58.835Z"
 }

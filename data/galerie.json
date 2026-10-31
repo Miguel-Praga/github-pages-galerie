@@ -12,12 +12,19 @@
     "instagram": "",
     "repo": "Miguel-Praga/galerie",
     "vetev": "",
-    "vzhled": { "styl": "papir", "rezim": "auto", "akcent": "", "pismo": "klasicke", "ramy": "zadne", "velikost": "stredni" },
+    "vzhled": {
+      "styl": "papir",
+      "rezim": "auto",
+      "akcent": "",
+      "pismo": "klasicke",
+      "ramy": "zadne",
+      "velikost": "stredni"
+    },
     "obchod": {
-      "zapnuto": true,
+      "zapnuto": false,
       "ucet": "",
       "prijemce": "",
-      "hotove": true,
+      "hotove": false,
       "doprava": [
         {
           "nazev": "Osobní převzetí v Praze",
@@ -268,5 +275,5 @@
       "ukazka": true
     }
   ],
-  "upraveno": "2026-10-31T13:40:29.575Z"
+  "upraveno": "2026-10-31T17:51:58.445Z"
 }

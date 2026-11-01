@@ -10,7 +10,7 @@
 
   const G = window.Galerie;
   const U = window.Uloziste;
-  const { h, $, $$, cena } = G;
+  const { h, $, $$ } = G;
 
   const RELACE = 'galerie.relace'; // sessionStorage: {repo, klic, vetev, uzivatel}
   const ULOZENY = 'galerie.klic';  // localStorage: zašifrovaný klíč pro tohle zařízení
@@ -35,7 +35,7 @@
     vychoziVetev: '',
     hlidani: null,
     klic: '',                // přístupový klíč aktuálního přihlášení (jen v paměti a v sessionStorage)
-    uzivatel: null,          // {jmeno, zobrazit, role, ucet, zmenitHeslo}
+    uzivatel: null,          // {jmeno, role, ucet, zmenitHeslo}
     ucty: [],                // veřejný seznam účtů pro přihlašovací obrazovku
     upravovanyUcet: null,    // jméno účtu, kterému správce mění heslo/klíč
     nahledTmavy: window.matchMedia('(prefers-color-scheme: dark)').matches,
@@ -122,12 +122,12 @@
   }
 
   // Kdo se přihlásí holým klíčem (nebo klíčem uloženým v zařízení), je správce.
-  const SPRAVCE_KLICEM = { jmeno: '', zobrazit: 'správce', role: 'admin', ucet: false };
+  const SPRAVCE_KLICEM = { jmeno: '', role: 'admin', ucet: false };
 
   function navazPrihlaseni() {
     $('[data-form-lokalni]').addEventListener('submit', (e) => {
       e.preventDefault();
-      sTlacitkem(e.target, () => prihlas(U.lokalni(), '', { jmeno: '', zobrazit: 'lokálně', role: 'admin', ucet: false }));
+      sTlacitkem(e.target, () => prihlas(U.lokalni(), '', { jmeno: '', role: 'admin', ucet: false }));
     });
 
     $$('[data-prepnout]').forEach((b) => { b.onclick = () => { chybaPrihlaseni(''); ukazPrihlaseni(b.dataset.prepnout); }; });
@@ -148,7 +148,7 @@
         }
         try {
           await prihlas(U.github(obsah.repo, obsah.klic, obsah.vetev), obsah.klic, {
-            jmeno: ucet.jmeno, zobrazit: ucet.zobrazit || ucet.jmeno, role: obsah.role || 'spravkyne',
+            jmeno: ucet.jmeno, role: obsah.role || 'spravkyne',
             ucet: true, zmenitHeslo: !!ucet.zmenitHeslo,
           });
         } catch (chyba) {
@@ -217,7 +217,7 @@
     $('[data-prihlaseni]').hidden = true;
     $('[data-aplikace]').hidden = false;
     $('[data-rezim]').textContent = (uloziste.druh === 'lokalni' ? 'lokální složka' : uloziste.repo) +
-      ' · ' + S.uzivatel.zobrazit + (S.uzivatel.ucet ? ` (${ROLE[S.uzivatel.role] || S.uzivatel.role})` : '');
+      ' · ' + (S.uzivatel.ucet ? `${S.uzivatel.jmeno} (${ROLE[S.uzivatel.role] || S.uzivatel.role})` : (uloziste.druh === 'lokalni' ? 'lokálně' : 'správce'));
     $('[data-zmenit-heslo]').hidden = !S.uzivatel.ucet;
     navazAplikaci();
     if (S.uzivatel.zmenitHeslo) otevriZmenuHesla(true);
@@ -228,8 +228,8 @@
     G.zapis(sessionStorage, RELACE, { repo: S.uloziste.repo, klic: S.klic, vetev: S.uloziste.vetev, uzivatel: S.uzivatel });
   }
 
-  // jméno do zprávy commitu, ať je v historii vidět, kdo co změnil
-  const kdo = () => (S.uzivatel && S.uzivatel.ucet ? ` (${S.uzivatel.zobrazit})` : '');
+  // Do zprávy commitu jde jen role, ne jméno — historie repa je veřejná.
+  const kdo = () => (S.uzivatel && S.uzivatel.ucet ? ` (${ROLE[S.uzivatel.role] || S.uzivatel.role})` : '');
 
   // =========================================================================
   // data
@@ -245,12 +245,19 @@
       nazev: 'Galerie', podtitul: '', autorka: '', uvod: '', oAutorce: '', portret: '',
       email: '', telefon: '', instagram: '', repo: '', vetev: '',
     }, data.nastaveni);
-    n.obchod = Object.assign({ zapnuto: false, ucet: '', prijemce: '', hotove: false, doprava: [], podminky: '' }, n.obchod);
+    // Starší tvar dat se převede na dnešní; nepotřebné části se při
+    // dalším uložení z veřejných dat ztratí.
+    n.zajem = G.nastaveniZajmu(n);
+    delete n.obchod;
     n.vzhled = Object.assign({ styl: 'papir', rezim: 'auto', akcent: '', pismo: 'klasicke', ramy: 'zadne', velikost: 'stredni' }, n.vzhled);
     const dila = (data.dila || []).map((d) => Object.assign({
       id: G.nahodne(6), nazev: '', rok: '', technika: '', rozmer: '', serie: '', popis: '',
-      stav: 'vystaveno', cena: null, tisk: null, zverejneno: true, doporucene: false, pridano: '', obrazky: [],
-    }, d));
+      stav: 'vystaveno', tisk: null, zverejneno: true, doporucene: false, pridano: '', obrazky: [],
+    }, d, { stav: G.stavDila(d), tisk: d.tisk ? { popis: d.tisk.popis || '' } : null }));
+    dila.forEach((d) => {
+      delete d.cena;
+      if (!G.maOceneni(d)) delete d.oceneni;
+    });
     return Object.assign({ format: 1 }, data, { nastaveni: n, dila });
   }
 
@@ -347,7 +354,7 @@
     const o = d.obrazky[0];
     const puvodni = S.puvodniDila.get(d.id);
     const zmena = !puvodni ? 'nové' : puvodni !== JSON.stringify(d) ? 'upravené' : '';
-    const obchod = S.data.nastaveni.obchod.zapnuto;
+    const zajem = S.data.nastaveni.zajem.zapnuto;
     const li = h('li', {
       class: 'karta' + (d.zverejneno === false ? ' skryte' : ''), draggable: 'true', dataset: { id: d.id },
     },
@@ -365,8 +372,9 @@
       d.ukazka && h('span', { class: 'st ukazka' }, 'ukázka'),
       d.zverejneno === false && h('span', { class: 'st skryte' }, 'skryté'),
       d.doporucene && h('span', { class: 'st doporucene' }, '★ úvod'),
-      obchod && d.stav !== 'vystaveno' && h('span', { class: 'st ' + d.stav }, G.STAVY[d.stav] + (d.stav === 'prodej' && d.cena ? ' · ' + cena(d.cena) : '')),
-      obchod && d.tisk && d.tisk.cena > 0 && h('span', { class: 'st tisk' }, 'tisk ' + cena(d.tisk.cena)))));
+      zajem && d.stav !== 'vystaveno' && h('span', { class: 'st ' + d.stav }, G.STAVY[d.stav]),
+      zajem && d.tisk && h('span', { class: 'st tisk' }, 'i tisk'),
+      zajem && G.maOceneni(d) && h('span', { class: 'st oceneni' }, G.castka(d.oceneni)))));
 
     // přetahování pořadí
     li.addEventListener('dragstart', (e) => {
@@ -433,10 +441,9 @@
     f.serie.value = d.serie || '';
     f.popis.value = d.popis || '';
     (formEditor.querySelector(`[name="stav"][value="${d.stav}"]`) || formEditor.querySelector('[name="stav"]')).checked = true;
-    f.cena.value = d.cena != null ? d.cena : '';
     f.tiskZapnuto.checked = !!d.tisk;
-    f.tiskCena.value = d.tisk && d.tisk.cena != null ? d.tisk.cena : '';
     f.tiskPopis.value = (d.tisk && d.tisk.popis) || '';
+    f.oceneni.value = G.maOceneni(d) ? new Intl.NumberFormat('cs-CZ').format(d.oceneni) : '';
     f.zverejneno.checked = d.zverejneno !== false;
     f.doporucene.checked = !!d.doporucene;
     $('#editor-nadpis').textContent = d.nazev || 'Nové dílo';
@@ -445,8 +452,6 @@
     if (!editor.open) editor.showModal();
     if (!d.nazev || d.nazev === 'Nové dílo') { f.nazev.focus(); f.nazev.select(); }
   }
-
-  const cislo = (v) => (String(v).trim() === '' ? null : Math.max(0, Math.round(Number(v)) || 0));
 
   function zapisEditor() {
     const d = najdi(S.editovane);
@@ -459,8 +464,10 @@
     d.serie = f.serie.value;
     d.popis = f.popis.value;
     d.stav = (formEditor.querySelector('[name="stav"]:checked') || {}).value || 'vystaveno';
-    d.cena = cislo(f.cena.value);
-    d.tisk = f.tiskZapnuto.checked ? { cena: cislo(f.tiskCena.value), popis: f.tiskPopis.value } : null;
+    d.tisk = f.tiskZapnuto.checked ? { popis: f.tiskPopis.value } : null;
+    const oceneni = ctiCastku(f.oceneni.value);
+    if (oceneni && d.stav !== 'sbirka') d.oceneni = oceneni;
+    else delete d.oceneni;
     d.zverejneno = f.zverejneno.checked;
     d.doporucene = f.doporucene.checked;
     $('#editor-nadpis').textContent = d.nazev.trim() || 'Nové dílo';
@@ -469,12 +476,20 @@
     aktualizujStav();
   }
 
+  // „4 500“, „4500 Kč“ i „4 500,-“ → 4500; prázdné → null; nesmysl → undefined
+  function ctiCastku(text) {
+    const t = String(text).replace(/\s/g, '').replace(/(kč|,-|,–)$/i, '');
+    if (!t) return null;
+    return /^\d{1,9}$/.test(t) && +t > 0 ? +t : undefined;
+  }
+
   function aktualizujEditor(d) {
-    const obchod = S.data.nastaveni.obchod.zapnuto;
-    $('[data-obchod-vypnuty]').hidden = obchod;
+    $('[data-zajem-vypnuty]').hidden = S.data.nastaveni.zajem.zapnuto;
     $('[data-tisk-pole]').hidden = !formEditor.elements.tiskZapnuto.checked;
-    const cenaPole = formEditor.elements.cena;
-    cenaPole.closest('label').classList.toggle('ztlumene', d.stav === 'vystaveno');
+    $('[data-oceneni-pole]').hidden = d.stav === 'sbirka';
+    const chybne = ctiCastku(formEditor.elements.oceneni.value) === undefined;
+    $('[data-oceneni-chyba]').hidden = !chybne;
+    formEditor.elements.oceneni.setAttribute('aria-invalid', String(chybne));
     const i = S.data.dila.indexOf(d);
     $('[data-posun="-1"]').disabled = i <= 0;
     $('[data-posun="1"]').disabled = i >= S.data.dila.length - 1;
@@ -609,7 +624,7 @@
         const o = await pripravObrazek(soubor, nazev);
         nova.push({
           id: noveId(), nazev, rok: String(new Date().getFullYear()), technika: '', rozmer: '', serie: '', popis: '',
-          stav: 'vystaveno', cena: null, tisk: null, zverejneno: true, doporucene: false, pridano: dnes(), obrazky: [o],
+          stav: 'vystaveno', tisk: null, zverejneno: true, doporucene: false, pridano: dnes(), obrazky: [o],
         });
       } catch (e) {
         chyby.push(`${soubor.name}: ${e.message}`);
@@ -662,26 +677,8 @@
       if (el.type === 'checkbox') el.checked = !!v;
       else el.value = v == null ? '' : v;
     }
-    vykresliDopravu();
     vykresliPortret();
-    kontrolaObchodu();
-  }
-
-  function vykresliDopravu() {
-    const doprava = S.data.nastaveni.obchod.doprava;
-    $('[data-doprava]').replaceChildren(...doprava.map((m, i) => h('li', { class: 'doprava-radek' },
-      h('input', { 'aria-label': 'Název', placeholder: 'Osobní převzetí', value: m.nazev || '', oninput: (e) => { m.nazev = e.target.value; aktualizujStav(); } }),
-      h('label', { class: 'kratke' }, h('input', {
-        type: 'number', min: '0', step: '1', 'aria-label': 'Cena v Kč', value: m.cena != null ? m.cena : '',
-        oninput: (e) => { m.cena = cislo(e.target.value) || 0; aktualizujStav(); },
-      }), ' Kč'),
-      h('label', { class: 'zaskrt' }, h('input', {
-        type: 'checkbox', checked: !!m.adresa, onchange: (e) => { m.adresa = e.target.checked; aktualizujStav(); },
-      }), ' chce adresu'),
-      h('button', {
-        class: 'odkaz', type: 'button', 'aria-label': 'Odebrat způsob',
-        onclick: () => { doprava.splice(i, 1); vykresliDopravu(); aktualizujStav(); },
-      }, 'odebrat'))));
+    kontrolaZajmu();
   }
 
   function vykresliPortret() {
@@ -690,34 +687,13 @@
     $('[data-portret-smazat]').hidden = !cesta;
   }
 
-  function kontrolaObchodu() {
-    const o = S.data.nastaveni.obchod;
-    $('[data-obchod-pole]').classList.toggle('ztlumene', !o.zapnuto);
-    const box = $('[data-ucet-kontrola]');
-    const zpravy = [];
-    if (o.zapnuto && !String(S.data.nastaveni.email).trim()) {
-      zpravy.push(h('p', { class: 'varovani' }, 'Vyplňte e-mail v části O autorce — jinak nebudou objednávky kam chodit.'));
-    }
-    if (String(o.ucet).trim()) {
-      const { iban, chyba } = G.qr.ucetNaIban(o.ucet);
-      if (chyba) {
-        zpravy.push(h('p', { class: 'varovani' }, chyba));
-      } else {
-        const ukazka = h('div', { class: 'qr-zkouska', hidden: true });
-        zpravy.push(h('p', { class: 'v-poradku' }, `✓ IBAN ${iban.replace(/(.{4})/g, '$1 ').trim()} `,
-          h('button', {
-            class: 'odkaz', type: 'button',
-            onclick: () => {
-              ukazka.replaceChildren(G.qr.svg(G.qr.platba({ iban, castka: 1, zprava: 'Zkouska QR platby', prijemce: o.prijemce }), 'Zkušební QR'),
-                h('span', {}, 'Zkušební platba 1 Kč. Naskenujte ji v bance a zkontrolujte, že sedí účet a jméno — ale neodesílejte.'));
-              ukazka.hidden = !ukazka.hidden;
-            },
-          }, 'zkušební QR kód')), ukazka);
-      }
-    } else if (o.zapnuto && !o.hotove) {
-      zpravy.push(h('p', { class: 'napoveda' }, 'Bez čísla účtu se u objednávky neukáže QR platba — platbu pak domluvíte e-mailem.'));
-    }
-    box.replaceChildren(...zpravy);
+  function kontrolaZajmu() {
+    const z = S.data.nastaveni.zajem;
+    $('[data-zajem-pole]').classList.toggle('ztlumene', !z.zapnuto);
+    const bezEmailu = z.zapnuto && !String(S.data.nastaveni.email).trim();
+    $('[data-zajem-kontrola]').replaceChildren(...(bezEmailu
+      ? [h('p', { class: 'varovani' }, 'Vyplňte e-mail v části O autorce — jinak nebude mít zájemce kam napsat.')]
+      : []));
   }
 
   async function nahrajPortret(soubor) {
@@ -959,7 +935,6 @@
     G.pouzijVzhled(el, n.vzhled, S.nahledTmavy);
     const dila = S.data.dila.filter((d) => d.obrazky.length && d.zverejneno !== false);
     const hlavni = dila.find((d) => d.doporucene) || dila[0];
-    const prodej = n.obchod.zapnuto && dila.find((d) => d.stav === 'prodej' && d.cena);
     el.replaceChildren(
       h('div', { class: 'nv-lista' },
         h('span', { class: 'nv-znak' }, n.nazev || 'Galerie'),
@@ -971,7 +946,7 @@
           n.podtitul && h('p', { class: 'nv-pod' }, n.podtitul),
           h('div', { class: 'nv-tlacitka' },
             h('span', { class: 'nv-tl' }, 'Prohlédnout obrazy'),
-            h('span', { class: 'nv-tl plne' }, n.obchod.zapnuto ? 'Vložit do košíku' : 'Tlačítko'),
+            h('span', { class: 'nv-tl plne' }, n.zajem.zapnuto ? 'Mám zájem' : 'Tlačítko'),
             h('span', { class: 'nv-odkaz' }, 'odkaz'))),
         hlavni && h('div', { class: 'nv-ram' }, obrazek(hlavni.obrazky[0].nahled || hlavni.obrazky[0].velky, ''))),
       h('div', { class: 'nv-mrizka' }, dila.slice(0, 8).map((d) => {
@@ -979,7 +954,7 @@
         const p = o.sirka && o.vyska ? o.sirka / o.vyska : 1;
         return h('div', { class: 'nv-dlazdice', styl: { '--p': p.toFixed(3) } },
           obrazek(o.nahled || o.velky, ''),
-          d === prodej && h('span', { class: 'nv-stitek' }, cena(d.cena)));
+          n.zajem.zapnuto && G.stavDila(d) === 'rezervovano' && h('span', { class: 'nv-stitek' }, G.STAVY.rezervovano));
       })),
     );
   }
@@ -1040,15 +1015,16 @@
     }
     $('[data-ucty-prazdne]').hidden = ucty.length > 0;
     seznam.replaceChildren(...ucty.map((u) => h('li', { class: 'ucet' },
-      h('span', { class: 'ucet-avatar', 'aria-hidden': 'true' }, (u.zobrazit || u.jmeno).slice(0, 1).toUpperCase()),
+      h('span', { class: 'ucet-avatar', 'aria-hidden': 'true' }, u.jmeno.slice(0, 1).toUpperCase()),
       h('span', { class: 'ucet-text' },
-        h('strong', {}, u.zobrazit || u.jmeno),
-        h('small', {}, `přihlašovací jméno ${u.jmeno}` + (u.zmeneno ? ` · změněno ${hezkeDatum(u.zmeneno)}` : ''))),
+        h('strong', {}, u.jmeno),
+        h('small', {}, u.zmeneno ? `změněno ${hezkeDatum(u.zmeneno)}` : '\u00a0')),
       h('span', { class: 'karta-stitky' },
         h('span', { class: 'st ' + u.role }, ROLE[u.role] || u.role),
         u.zmenitHeslo && h('span', { class: 'st zmena' }, 'čeká na vlastní heslo'),
         S.uzivatel.jmeno === u.jmeno && h('span', { class: 'st ja' }, 'vy')),
       h('span', { class: 'ucet-akce' },
+        h('button', { class: 'tl male', type: 'button', onclick: () => prejmenujUcet(u) }, 'Přejmenovat'),
         h('button', { class: 'tl male', type: 'button', onclick: () => upravUcet(u) }, 'Nové heslo / klíč'),
         h('button', { class: 'tl male nebezpecne', type: 'button', onclick: () => smazUcet(u) }, 'Smazat')))));
   }
@@ -1059,9 +1035,8 @@
     S.upravovanyUcet = u.jmeno;
     f.elements.jmeno.value = u.jmeno;
     f.elements.jmeno.readOnly = true;
-    f.elements.zobrazit.value = u.zobrazit || '';
     (f.querySelector(`[name="role"][value="${u.role}"]`) || {}).checked = true;
-    $('[data-ucet-nadpis]').textContent = `Nové heslo nebo klíč — ${u.zobrazit || u.jmeno}`;
+    $('[data-ucet-nadpis]').textContent = `Nové heslo nebo klíč — ${u.jmeno}`;
     $('[data-ucet-ulozit]').textContent = 'Uložit';
     $('[data-ucet-zrusit]').hidden = false;
     $('[data-predani]').hidden = true;
@@ -1090,7 +1065,7 @@
     tlacitko.disabled = true;
     try {
       const jmeno = pole.jmeno.value.trim().toLowerCase();
-      if (!/^[a-z0-9][a-z0-9._-]{1,29}$/.test(jmeno)) throw new Error('Přihlašovací jméno: 2–30 znaků, malá písmena bez diakritiky, číslice, tečka, pomlčka.');
+      if (!PLATNE_JMENO.test(jmeno)) throw new Error('Přihlašovací jméno: 2–30 znaků, malá písmena bez diakritiky, číslice, tečka, pomlčka.');
       const heslo = pole.heslo.value;
       if (heslo.length < MIN_HESLO) throw new Error(`Heslo musí mít aspoň ${MIN_HESLO} znaků.`);
       const role = (f.querySelector('[name="role"]:checked') || {}).value || 'spravkyne';
@@ -1116,14 +1091,14 @@
       obsah.role = role;
       const balik = await U.zasifruj(JSON.stringify(obsah), heslo);
       const zaznam = Object.assign({
-        jmeno, zobrazit: pole.zobrazit.value.trim() || jmeno, role, zmenitHeslo: true, zmeneno: dnesniDatum(),
+        jmeno, role, zmenitHeslo: true, zmeneno: dnesniDatum(),
       }, balik);
       const novy = !S.upravovanyUcet;
       await zapisUcty((ucty) => {
         const i = ucty.findIndex((u) => u.jmeno === jmeno);
         if (i >= 0) ucty[i] = zaznam;
         else ucty.push(zaznam);
-      }, `Správa${kdo()}: ${novy ? 'nový účet' : 'nové heslo pro účet'} ${jmeno}`);
+      }, `Správa${kdo()}: ${novy ? 'nový účet' : 'nové heslo pro účet'}`);
 
       $('[data-predani-text]').textContent = [
         `Adresa:         ${new URL('.', location.href).href}`,
@@ -1144,14 +1119,38 @@
     }
   }
 
+  const PLATNE_JMENO = /^[a-z0-9][a-z0-9._-]{1,29}$/;
+
+  async function prejmenujUcet(u) {
+    const zadane = prompt(`Nové přihlašovací jméno pro účet „${u.jmeno}“.\nJe veřejně čitelné, ať neprozradí, o koho jde (heslo se nemění):`, u.jmeno);
+    if (zadane == null) return;
+    const nove = zadane.trim().toLowerCase();
+    if (nove === u.jmeno) return;
+    if (!PLATNE_JMENO.test(nove)) { oznam('Jméno: 2–30 znaků, malá písmena bez diakritiky, číslice, tečka, pomlčka.', true); return; }
+    try {
+      await zapisUcty((ucty) => {
+        if (ucty.some((x) => x.jmeno === nove)) throw new Error('Účet s tímhle jménem už existuje.');
+        const ucet = ucty.find((x) => x.jmeno === u.jmeno);
+        if (!ucet) throw new Error('Účet už neexistuje.');
+        ucet.jmeno = nove;
+        delete ucet.zobrazit;
+      }, `Správa${kdo()}: přejmenován účet`);
+      if (S.uzivatel.jmeno === u.jmeno) { S.uzivatel.jmeno = nove; ulozRelaci(); }
+      await vykresliUcty();
+      oznam(`Účet se teď přihlašuje jménem „${nove}“.`);
+    } catch (e) {
+      oznam('Přejmenovat se nepodařilo: ' + e.message, true);
+    }
+  }
+
   async function smazUcet(u) {
-    const zprava = `Smazat účet „${u.zobrazit || u.jmeno}“?\n\nKlíč, který byl v účtu, zrušte i na GitHubu (Settings → Developer settings → Fine-grained tokens) — smazáním účtu sám platit nepřestane.`;
+    const zprava = `Smazat účet „${u.jmeno}“?\n\nKlíč, který byl v účtu, zrušte i na GitHubu (Settings → Developer settings → Fine-grained tokens) — smazáním účtu sám platit nepřestane.`;
     if (!confirm(zprava)) return;
     try {
       await zapisUcty((ucty) => {
         const i = ucty.findIndex((x) => x.jmeno === u.jmeno);
         if (i >= 0) ucty.splice(i, 1);
-      }, `Správa${kdo()}: smazán účet ${u.jmeno}`);
+      }, `Správa${kdo()}: smazán účet`);
       await vykresliUcty();
       oznam('Účet je smazaný.');
     } catch (e) {
@@ -1300,19 +1299,12 @@
       if (!el.name || !el.form) return;
       nastav(S.data.nastaveni, el.name, el.type === 'checkbox' ? el.checked : el.value);
       if (el.name === 'nazev') $$('[data-nazev-webu]').forEach((x) => { x.textContent = el.value || 'Galerie'; });
-      if (el.name.startsWith('obchod') || el.name === 'email') kontrolaObchodu();
-      if (el.name === 'obchod.zapnuto') vykresliSeznam();
+      if (el.name.startsWith('zajem') || el.name === 'email') kontrolaZajmu();
+      if (el.name === 'zajem.zapnuto') vykresliSeznam();
       aktualizujStav();
     };
     formNastaveni.addEventListener('input', zapisNastaveni);
     formNastaveni.addEventListener('change', zapisNastaveni);
-    $('[data-pridat-dopravu]').onclick = () => {
-      S.data.nastaveni.obchod.doprava.push({ nazev: '', cena: 0, adresa: false });
-      vykresliDopravu();
-      aktualizujStav();
-      const radky = $$('[data-doprava] input');
-      if (radky.length) radky[radky.length - 3].focus();
-    };
     // vzhled
     const fVzhled = $('[data-vzhled]');
     fVzhled.addEventListener('input', zapisVzhled);

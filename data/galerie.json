@@ -20,29 +20,9 @@
       "ramy": "zadne",
       "velikost": "stredni"
     },
-    "obchod": {
-      "zapnuto": false,
-      "ucet": "",
-      "prijemce": "",
-      "hotove": false,
-      "doprava": [
-        {
-          "nazev": "Osobní převzetí v Praze",
-          "cena": 0,
-          "adresa": false
-        },
-        {
-          "nazev": "Zásilkovna na výdejní místo",
-          "cena": 89,
-          "adresa": true
-        },
-        {
-          "nazev": "Česká pošta – balík do ruky",
-          "cena": 159,
-          "adresa": true
-        }
-      ],
-      "podminky": "Originály jsou vždy jen jednou — kdo pošle objednávku dřív, toho je. Do dvou dnů se ozveme e-mailem, potvrdíme, že je obraz váš, a domluvíme předání.\n\nObrazy balíme pečlivě do kartonu a bublinkové fólie. Při osobním převzetí můžete platit i hotově."
+    "zajem": {
+      "zapnuto": true,
+      "text": "Pokud se vám některý obraz líbí, je možné ho zakoupit. V takovém případě mě prosím kontaktujte — vše domluvíme individuálně."
     }
   },
   "dila": [
@@ -54,10 +34,8 @@
       "rozmer": "30 × 40 cm",
       "serie": "Krajiny",
       "popis": "Les za domem v polovině října, kdy buky hoří a vzduch voní houbami.\n\nMalováno mokrým do mokrého, aby se barvy samy rozlévaly.",
-      "stav": "prodej",
-      "cena": 2400,
+      "stav": "dostupne",
       "tisk": {
-        "cena": 350,
         "popis": "A4, matný fine-art papír"
       },
       "zverejneno": true,
@@ -82,7 +60,6 @@
       "serie": "Krajiny",
       "popis": "Vzpomínka na prázdniny. Den, kdy se nedalo koupat, ale dívat se dalo celé odpoledne.",
       "stav": "rezervovano",
-      "cena": 4800,
       "tisk": null,
       "zverejneno": true,
       "doporucene": false,
@@ -105,10 +82,8 @@
       "rozmer": "40 × 30 cm",
       "serie": "Květiny",
       "popis": "Pole u cesty na chatu.",
-      "stav": "prodano",
-      "cena": 1900,
+      "stav": "sbirka",
       "tisk": {
-        "cena": 290,
         "popis": "A4, matný papír"
       },
       "zverejneno": true,
@@ -132,8 +107,7 @@
       "rozmer": "40 × 50 cm",
       "serie": "Město",
       "popis": "Okna, za kterými ještě někdo nespí.",
-      "stav": "prodej",
-      "cena": 3200,
+      "stav": "dostupne",
       "tisk": null,
       "zverejneno": true,
       "doporucene": false,
@@ -157,7 +131,6 @@
       "serie": "Abstrakce",
       "popis": "Pokus o to, jak dlouho se dá dívat na tři barvy.",
       "stav": "vystaveno",
-      "cena": null,
       "tisk": null,
       "zverejneno": true,
       "doporucene": false,
@@ -180,10 +153,8 @@
       "rozmer": "30 × 40 cm",
       "serie": "Květiny",
       "popis": "Kytice od babičky, než stihla zvadnout.",
-      "stav": "prodej",
-      "cena": 2100,
+      "stav": "dostupne",
       "tisk": {
-        "cena": 350,
         "popis": "A4, matný fine-art papír"
       },
       "zverejneno": true,
@@ -208,9 +179,7 @@
       "serie": "Krajiny",
       "popis": "Kopce se ráno skládají za sebe jako kulisy v divadle.",
       "stav": "vystaveno",
-      "cena": null,
       "tisk": {
-        "cena": 420,
         "popis": "panoráma 50 × 27 cm"
       },
       "zverejneno": true,
@@ -234,8 +203,7 @@
       "rozmer": "35 × 28 cm",
       "serie": "Zátiší",
       "popis": "První olej. Citrony vydržely modelem tři dny.",
-      "stav": "prodej",
-      "cena": 2900,
+      "stav": "dostupne",
       "tisk": null,
       "zverejneno": true,
       "doporucene": false,
@@ -259,7 +227,6 @@
       "serie": "Abstrakce",
       "popis": "Hra s kružítkem, které se nechtělo poslouchat.",
       "stav": "vystaveno",
-      "cena": null,
       "tisk": null,
       "zverejneno": true,
       "doporucene": false,

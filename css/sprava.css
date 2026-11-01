@@ -155,9 +155,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--akcent); width
 .karta-stitky { display: flex; flex-wrap: wrap; align-items: flex-start; align-content: flex-start; gap: 5px; padding: 6px 12px 12px; min-height: 30px; }
 .st { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: var(--papir); color: var(--sede); white-space: nowrap; }
 .st.zmena { background: color-mix(in srgb, var(--zluta) 20%, transparent); color: var(--zluta); font-weight: 600; }
-.st.prodej { background: color-mix(in srgb, var(--zelena) 15%, transparent); color: var(--zelena); }
+.st.dostupne { background: color-mix(in srgb, var(--zelena) 15%, transparent); color: var(--zelena); }
 .st.rezervovano { background: color-mix(in srgb, var(--zluta) 18%, transparent); color: var(--zluta); }
-.st.prodano { background: var(--linka); color: var(--sede); }
+.st.sbirka { background: var(--linka); color: var(--sede); }
+.st.oceneni { border: 1px solid var(--linka); background: transparent; }
+.editor input[aria-invalid="true"][name] { border-color: var(--cervena); }
 .st.doporucene { color: var(--akcent); }
 .st.ukazka { border: 1px dashed var(--slabe); background: transparent; }
 
@@ -165,25 +167,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--akcent); width
 .nastaveni { display: grid; gap: 20px; max-width: 860px; }
 .nastaveni fieldset { border: 1px solid var(--linka); border-radius: 12px; background: var(--karta); padding: 20px 22px 22px; margin: 0; display: grid; gap: 14px; min-width: 0; }
 .nastaveni legend { font-family: var(--patky); font-size: 1.45rem; padding: 0 8px; margin-left: -8px; color: var(--inkoust); }
-.obchod-pole { display: grid; gap: 14px; transition: opacity .2s; }
+.zajem-pole { display: grid; gap: 14px; transition: opacity .2s; }
+[data-zajem-kontrola] p { margin: 0; font-size: .88rem; }
 .prepinac { font-weight: 600; }
 .portret-volba { display: flex; align-items: center; gap: 18px; }
 .portret-nahled { width: 96px; height: 120px; border-radius: 8px; overflow: hidden; background: var(--papir); display: grid; place-items: center; color: var(--slabe); font-size: .8rem; flex: none; }
 .portret-nahled img { width: 100%; height: 100%; object-fit: cover; }
 .portret-volba .tl { display: inline-flex; }
 .portret-volba > div { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.ucet-kontrola p { margin: 0; font-size: .88rem; }
-.v-poradku { color: var(--zelena); }
 .varovani { color: var(--cervena); }
-.qr-zkouska { display: flex; align-items: center; gap: 16px; margin-top: 10px; padding: 12px; background: var(--papir); border-radius: 8px; font-size: .85rem; color: var(--sede); }
-.qr-zkouska .qr { width: 130px; height: 130px; flex: none; }
-.qr .qr-pozadi { fill: #fff; }
-.qr .qr-moduly { fill: #111; }
-.doprava .popisek { margin: 0 0 6px; font-size: .88rem; color: var(--sede); }
-.doprava ul { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; }
-.doprava-radek { display: grid; grid-template-columns: minmax(0, 1fr) 120px auto auto; gap: 12px; align-items: center; }
-.kratke { display: flex; align-items: center; gap: 6px; }
-.kratke input { max-width: 160px; }
 
 /* --- editor díla --------------------------------------------------------- */
 dialog { border: 0; padding: 0; color: var(--inkoust); }
@@ -288,6 +280,7 @@ body[data-role="spravkyne"] [data-jen-admin] { display: none !important; }
 
 /* --- účty ---------------------------------------------------------------- */
 .ucty { display: grid; gap: 18px; max-width: 860px; }
+.ucty .pruh { margin: 0; }
 .pruh.info { background: var(--karta); border-color: var(--linka); color: var(--sede); }
 .ucty-seznam { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .ucet {
@@ -342,7 +335,6 @@ body[data-role="spravkyne"] [data-jen-admin] { display: none !important; }
   .editor form { max-height: 100dvh; height: 100%; }
   .editor-telo { grid-template-columns: minmax(0, 1fr); padding: 16px; flex: 1; }
   .editor-pata { border-radius: 0; padding: 12px 16px; flex-wrap: wrap; }
-  .doprava-radek { grid-template-columns: minmax(0, 1fr) 100px; }
   .vzhled { grid-template-columns: minmax(0, 1fr); }
   .nahled-obal { position: static; order: -1; }
   .male-okno { width: 100vw; height: auto; max-height: 100dvh; }

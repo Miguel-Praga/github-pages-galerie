@@ -119,10 +119,24 @@ class TestDataGalerie(unittest.TestCase):
         idcka = [d["id"] for d in data["dila"]]
         self.assertEqual(len(idcka), len(set(idcka)), "duplicitní id děl")
         for d in data["dila"]:
-            self.assertIn(d["stav"], {"vystaveno", "prodej", "rezervovano", "prodano"}, d["id"])
+            self.assertIn(d["stav"], {"vystaveno", "dostupne", "rezervovano", "sbirka"}, d["id"])
             for o in d["obrazky"]:
                 for cesta in (o["velky"], o["nahled"]):
                     self.assertTrue((koren / cesta).is_file(), f"chybí {cesta}")
+
+    def test_v_datech_nejsou_platebni_udaje(self):
+        # Prodej se domlouvá individuálně — veřejná data nesmí nést ceník,
+        # obchod ani účet. Jediná částka je nepovinné ocenění autorky.
+        koren = Path(__file__).resolve().parent.parent
+        data = json.loads((koren / "data" / "galerie.json").read_text(encoding="utf-8"))
+        self.assertNotIn("obchod", data["nastaveni"])
+        for d in data["dila"]:
+            self.assertNotIn("cena", d, d["id"])
+            self.assertNotIn("cena", d.get("tisk") or {}, d["id"])
+            if "oceneni" in d:
+                self.assertIsInstance(d["oceneni"], int, d["id"])
+                self.assertGreater(d["oceneni"], 0, d["id"])
+                self.assertNotEqual(d["stav"], "sbirka", f"{d['id']}: ocenění u díla v soukromé sbírce")
 
     def test_ucty_json(self):
         koren = Path(__file__).resolve().parent.parent

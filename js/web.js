@@ -1,31 +1,30 @@
-// web.js — veřejná galerie: úvod, mřížka, detail díla, košík a objednávka
+// web.js — veřejná galerie: úvod, mřížka, detail díla a zájem o díla
 //
 // Data jsou v jediném souboru data/galerie.json, který píše Správa.
-// Objednávka nikam neodchází sama — složí e-mail, který zákazník odešle
-// ze své pošty, a ukáže platební údaje s QR kódem.
+// Zájem o dílo nikam neodchází sám — složí e-mail, který návštěvník
+// odešle ze své pošty. Všechno ostatní se domlouvá individuálně.
 
 (function () {
   'use strict';
 
   const G = window.Galerie;
-  const { h, $, $$, cena } = G;
+  const { h, $, $$ } = G;
 
-  const KLIC_KOSIKU = 'galerie.kosik';
-  const MAX_KUSU = 20;
+  const KLIC_VYBERU = 'galerie.zajem';
 
   const S = {
     nastaveni: {},
-    obchod: null,      // nastavení obchodu, nebo null, když je vypnutý
+    zajem: null,       // nastavení zájmu o díla, nebo null, když je vypnutý
     dila: [],          // jen zveřejněná, v pořadí ze Správy
     filtr: 'vse',
-    jenProdej: false,
+    jenDostupne: false,
     viditelna: [],
     detail: { id: null, obrazek: 0, pushnuto: false },
-    kosik: [],
+    vyber: [],         // [{id, druh: 'original'|'tisk'}]
   };
 
   const detail = $('#detail');
-  const kosikOkno = $('#kosik');
+  const zajemOkno = $('#zajem');
 
   // --- start ----------------------------------------------------------------
   async function start() {
@@ -41,15 +40,18 @@
       return;
     }
     S.nastaveni = data.nastaveni || {};
-    S.obchod = S.nastaveni.obchod && S.nastaveni.obchod.zapnuto ? S.nastaveni.obchod : null;
-    S.dila = (data.dila || []).filter((d) => d.zverejneno !== false && d.obrazky && d.obrazky.length);
+    const zajem = G.nastaveniZajmu(S.nastaveni);
+    S.zajem = zajem.zapnuto ? zajem : null;
+    S.dila = (data.dila || [])
+      .filter((d) => d.zverejneno !== false && d.obrazky && d.obrazky.length)
+      .map((d) => Object.assign({}, d, { stav: G.stavDila(d) }));
 
     nastavVzhled();
     vykresliNastaveni();
     vykresliVybrane();
     vykresliFiltry();
     vykresliMrizku();
-    nactiKosik();
+    nactiVyber();
     navaz();
     podleAdresy();
     document.documentElement.classList.remove('ceka');
@@ -93,18 +95,15 @@
     if (n.portret) portret.replaceChildren(h('img', { src: G.adresaObrazku(n.portret), alt: n.autorka || 'Autorka', loading: 'lazy' }));
 
     const odkazy = kontaktniOdkazy(n);
-    $('[data-odkazy-autorky]').replaceChildren(...odkazy.map((o) => o.cloneNode(true)));
     $('[data-kontakt]').replaceChildren(...odkazy);
+    $('[data-bez-kontaktu]').hidden = odkazy.length > 0;
     $('[data-copyright]').textContent = `© ${new Date().getFullYear()} ${n.autorka || nazev}`;
 
-    $$('[data-obchod]').forEach((el) => { el.hidden = !S.obchod; });
-    if (S.obchod) {
-      $('[data-podminky]').replaceChildren(...G.odstavce(S.obchod.podminky));
-      const platby = zpusobyPlatby();
-      $('[data-zpusob-platby]').textContent = platby.length
-        ? platby.map((p) => p.popis).join(' nebo ') + '.'
-        : 'Způsob platby domluvíme e-mailem.';
-    }
+    // Celá „zájmová“ část jde jedním přepínačem ve Správě úplně schovat.
+    $('[data-zajem]').hidden = !S.zajem;
+    const text = $('[data-zajem-text]');
+    text.hidden = !(S.zajem && S.zajem.text);
+    text.replaceChildren(...(S.zajem ? G.odstavce(S.zajem.text) : []));
   }
 
   function naplnText(vyber, text) {
@@ -144,29 +143,30 @@
   // --- filtry a mřížka ------------------------------------------------------
   function vykresliFiltry() {
     const serie = [...new Set(S.dila.map((d) => d.serie).filter(Boolean))];
-    const nekdoProdava = S.obchod && S.dila.some(nabizi);
+    const neco = S.zajem && S.dila.some(nabizi);
     const box = $('[data-filtry]');
-    if (!serie.length && !nekdoProdava) { box.hidden = true; return; }
+    if (!serie.length && !neco) { box.hidden = true; return; }
     const tlacitko = (popis, hodnota) => h('button', {
       class: 'filtr', type: 'button', 'aria-pressed': String(S.filtr === hodnota),
       onclick: () => { S.filtr = hodnota; vykresliFiltry(); vykresliMrizku(); },
     }, popis);
     box.replaceChildren(
       ...(serie.length ? [tlacitko('Vše', 'vse'), ...serie.map((s) => tlacitko(s, s))] : []),
-      nekdoProdava && h('button', {
-        class: 'filtr prodej', type: 'button', 'aria-pressed': String(S.jenProdej),
-        onclick: () => { S.jenProdej = !S.jenProdej; vykresliFiltry(); vykresliMrizku(); },
-      }, 'Na prodej'),
+      neco && h('button', {
+        class: 'filtr dostupne', type: 'button', 'aria-pressed': String(S.jenDostupne),
+        onclick: () => { S.jenDostupne = !S.jenDostupne; vykresliFiltry(); vykresliMrizku(); },
+      }, 'K dispozici'),
     );
   }
 
-  // Dá se u díla něco koupit (originál nebo tisk)?
+  // Dá se u díla projevit zájem (o originál nebo o tisk)?
+  const nabiziTisk = (d) => !!d.tisk;
   function nabizi(d) {
-    return (d.stav === 'prodej' && d.cena > 0) || !!(d.tisk && d.tisk.cena > 0);
+    return d.stav === 'dostupne' || nabiziTisk(d);
   }
 
   function vykresliMrizku() {
-    S.viditelna = S.dila.filter((d) => (S.filtr === 'vse' || d.serie === S.filtr) && (!S.jenProdej || nabizi(d)));
+    S.viditelna = S.dila.filter((d) => (S.filtr === 'vse' || d.serie === S.filtr) && (!S.jenDostupne || nabizi(d)));
     const mrizka = $('[data-mrizka]');
     mrizka.replaceChildren(...S.viditelna.map((d, i) => dlazdice(d, i)));
     rozvrhni();
@@ -245,11 +245,9 @@
   }
 
   function stitekDlazdice(d) {
-    if (!S.obchod) return null;
-    if (d.stav === 'prodej' && d.cena > 0) return h('span', { class: 'stitek' }, cena(d.cena));
-    if (d.stav === 'rezervovano') return h('span', { class: 'stitek rezervovano' }, 'Rezervováno');
-    if (d.stav === 'prodano') return h('span', { class: 'stitek prodano' }, d.tisk && d.tisk.cena ? 'Tisk ' + cena(d.tisk.cena) : 'Prodáno');
-    if (d.tisk && d.tisk.cena > 0) return h('span', { class: 'stitek' }, 'Tisk ' + cena(d.tisk.cena));
+    if (!S.zajem) return null;
+    if (d.stav === 'rezervovano') return h('span', { class: 'stitek rezervovano' }, G.STAVY.rezervovano);
+    if (d.stav === 'sbirka') return h('span', { class: 'stitek sbirka' }, G.STAVY.sbirka);
     return null;
   }
 
@@ -301,7 +299,7 @@
     $('[data-detail-nazev]').textContent = d.nazev;
     $('[data-detail-udaje]').textContent = [d.rok, d.technika, d.rozmer].filter(Boolean).join(' · ');
     $('[data-detail-popis]').replaceChildren(...G.odstavce(d.popis));
-    $('[data-detail-nabidka]').replaceChildren(...nabidka(d));
+    $('[data-detail-zajem]').replaceChildren(...dostupnost(d));
 
     const zeptat = $('[data-zeptat]');
     zeptat.hidden = !S.nastaveni.email;
@@ -310,35 +308,25 @@
     }
   }
 
-  function nabidka(d) {
-    if (!S.obchod) return [];
-    const polozky = [];
-    if (d.stav !== 'vystaveno' && d.cena > 0) {
-      const vKosiku = S.kosik.some((p) => p.id === d.id && p.druh === 'original');
-      let akce;
-      if (d.stav === 'prodej') {
-        akce = vKosiku
-          ? h('button', { class: 'tlacitko', type: 'button', onclick: otevriKosik }, 'V košíku ✓ — zobrazit')
-          : h('button', { class: 'tlacitko plne', type: 'button', onclick: () => pridej(d.id, 'original') }, 'Vložit do košíku');
-      } else {
-        akce = h('p', { class: 'pozn' }, d.stav === 'prodano' ? 'Originál už má nového majitele.' : 'Originál je právě rezervovaný.');
-      }
-      polozky.push(h('div', { class: 'nabidka-polozka ' + d.stav },
-        h('span', { class: 'co' }, 'Originál'),
-        h('span', { class: 'cena' }, cena(d.cena)),
-        h('span', { class: 'stav ' + d.stav }, G.STAVY[d.stav]),
-        h('div', { class: 'akce' }, akce)));
+  function dostupnost(d) {
+    if (!S.zajem) return [];
+    const prvky = [];
+    const vybrano = (druh) => S.vyber.some((p) => p.id === d.id && p.druh === druh);
+    const tlacitko = (druh, popis) => (vybrano(druh)
+      ? h('button', { class: 'tlacitko', type: 'button', onclick: otevriZajem }, 'Vybráno ✓ — zobrazit')
+      : h('button', { class: 'tlacitko' + (druh === 'original' ? ' plne' : ''), type: 'button', onclick: () => pridej(d.id, druh) }, popis));
+
+    if (d.stav !== 'vystaveno') prvky.push(h('p', { class: 'stav ' + d.stav }, G.STAVY[d.stav]));
+    if (G.maOceneni(d)) prvky.push(h('p', { class: 'oceneni' }, 'Ocenění autorky: ', h('strong', {}, G.castka(d.oceneni))));
+    if (d.stav === 'dostupne') {
+      prvky.push(tlacitko('original', nabiziTisk(d) ? 'Mám zájem o originál' : 'Mám zájem o toto dílo'));
     }
-    if (d.tisk && d.tisk.cena > 0) {
-      const tisku = (S.kosik.find((p) => p.id === d.id && p.druh === 'tisk') || {}).ks;
-      polozky.push(h('div', { class: 'nabidka-polozka' },
-        h('span', { class: 'co' }, 'Tisk'),
-        h('span', { class: 'cena' }, cena(d.tisk.cena)),
-        h('span', { class: 'pozn' }, d.tisk.popis || 'Reprodukce na kvalitním papíře'),
-        h('div', { class: 'akce' }, h('button', { class: 'tlacitko', type: 'button', onclick: () => pridej(d.id, 'tisk') },
-          tisku ? `Přidat další tisk (v košíku ${tisku})` : 'Přidat tisk do košíku'))));
+    if (nabiziTisk(d)) {
+      prvky.push(h('div', { class: 'tisk' },
+        h('span', {}, 'K dispozici je i tisk' + (d.tisk.popis ? ` (${d.tisk.popis})` : '') + '.'),
+        tlacitko('tisk', 'Mám zájem o tisk')));
     }
-    return polozky;
+    return prvky;
   }
 
   function odkazNaDilo(id) {
@@ -357,223 +345,117 @@
     else if (detail.open) { S.detail.pushnuto = false; detail.close(); }
   }
 
-  // --- košík ----------------------------------------------------------------
-  function nactiKosik() {
-    const ulozeny = G.precti(localStorage, KLIC_KOSIKU, []);
-    S.kosik = (Array.isArray(ulozeny) ? ulozeny : []).filter((p) => {
+  // --- výběr děl, o která má návštěvník zájem -------------------------------
+  function nactiVyber() {
+    const ulozeny = G.precti(localStorage, KLIC_VYBERU, []);
+    S.vyber = (Array.isArray(ulozeny) ? ulozeny : []).filter((p) => {
       const d = najdi(p.id);
-      if (!S.obchod || !d) return false;
-      if (p.druh === 'original') return d.stav === 'prodej' && d.cena > 0;
-      return p.druh === 'tisk' && d.tisk && d.tisk.cena > 0;
+      if (!S.zajem || !d) return false;
+      return p.druh === 'original' ? d.stav === 'dostupne' : p.druh === 'tisk' && nabiziTisk(d);
     });
-    ulozKosik();
+    ulozVyber();
   }
 
-  function ulozKosik() {
-    G.zapis(localStorage, KLIC_KOSIKU, S.kosik.map(({ id, druh, ks }) => ({ id, druh, ks })));
-    const pocet = S.kosik.reduce((s, p) => s + p.ks, 0);
+  function ulozVyber() {
+    G.zapis(localStorage, KLIC_VYBERU, S.vyber.map(({ id, druh }) => ({ id, druh })));
     const odznak = $('[data-pocet]');
-    odznak.textContent = pocet;
-    odznak.hidden = !pocet;
+    odznak.textContent = S.vyber.length;
+    odznak.hidden = !S.vyber.length;
   }
 
   function pridej(id, druh) {
-    const polozka = S.kosik.find((p) => p.id === id && p.druh === druh);
-    if (polozka) {
-      if (druh === 'tisk') polozka.ks = Math.min(MAX_KUSU, polozka.ks + 1);
-    } else {
-      S.kosik.push({ id, druh, ks: 1 });
-    }
-    ulozKosik();
+    if (!S.vyber.some((p) => p.id === id && p.druh === druh)) S.vyber.push({ id, druh });
+    ulozVyber();
     const odznak = $('[data-pocet]');
     odznak.classList.remove('cuk');
     void odznak.offsetWidth;
     odznak.classList.add('cuk');
-    oznam(druh === 'tisk' ? 'Tisk je v košíku' : 'Obraz je v košíku');
+    oznam('Přidáno mezi díla, o která máte zájem');
     if (detail.open) vykresliDetail();
   }
 
-  function cenaPolozky(p) {
-    const d = najdi(p.id);
-    return (p.druh === 'original' ? d.cena : d.tisk.cena) * p.ks;
-  }
+  const popisDruhu = (p, d) => (p.druh === 'original'
+    ? 'originál' + (d.rozmer ? ', ' + d.rozmer : '')
+    : 'tisk' + (d.tisk && d.tisk.popis ? ' — ' + d.tisk.popis : ''));
 
-  function vybranaDoprava() {
-    const moznosti = S.obchod.doprava || [];
-    const i = Number(($('[name="doprava"]:checked', kosikOkno) || {}).value || 0);
-    return moznosti[i] || null;
-  }
-
-  function zpusobyPlatby() {
-    const o = S.obchod || {};
-    const platby = [];
-    if (o.ucet) platby.push({ kod: 'prevod', nazev: 'Převodem na účet', popis: 'Převodem na účet — stačí naskenovat QR kód' });
-    if (o.hotove) platby.push({ kod: 'hotove', nazev: 'Hotově při převzetí', popis: 'hotově při osobním převzetí' });
-    return platby;
-  }
-
-  function otevriKosik() {
+  function otevriZajem() {
     if (detail.open) detail.close();
-    ukazKrok('polozky');
-    vykresliKosik();
-    if (!kosikOkno.open) kosikOkno.showModal();
+    ukazKrok('vyber');
+    vykresliVyber();
+    if (!zajemOkno.open) zajemOkno.showModal();
   }
 
   function ukazKrok(krok) {
-    $$('[data-krok]', kosikOkno).forEach((el) => { el.hidden = el.dataset.krok !== krok; });
-    $('#kosik-nadpis').textContent = krok === 'polozky' ? 'Košík' : 'Odeslat objednávku';
+    $$('[data-krok]', zajemOkno).forEach((el) => { el.hidden = el.dataset.krok !== krok; });
+    $('#zajem-nadpis').textContent = krok === 'vyber' ? 'Zájem o díla' : 'Odeslat zprávu';
   }
 
-  function vykresliKosik() {
-    const seznam = $('[data-polozky]', kosikOkno);
-    seznam.replaceChildren(...S.kosik.map((p) => {
+  function vykresliVyber() {
+    $('[data-polozky]', zajemOkno).replaceChildren(...S.vyber.map((p) => {
       const d = najdi(p.id);
       const o = d.obrazky[0];
       return h('li', { class: 'polozka' },
         h('img', { src: G.adresaObrazku(o.nahled || o.velky), alt: '' }),
         h('div', {},
           h('div', { class: 'nazev' }, d.nazev),
-          h('div', { class: 'druh' }, p.druh === 'original' ? 'Originál' + (d.rozmer ? ', ' + d.rozmer : '') : 'Tisk' + (d.tisk.popis ? ' — ' + d.tisk.popis : ''))),
-        h('div', { class: 'vpravo' },
-          h('strong', {}, cena(cenaPolozky(p))),
-          p.druh === 'tisk' && h('span', { class: 'mnozstvi' },
-            h('button', { type: 'button', 'aria-label': 'Ubrat kus', onclick: () => zmenKusy(p, -1) }, '−'),
-            h('span', {}, p.ks),
-            h('button', { type: 'button', 'aria-label': 'Přidat kus', onclick: () => zmenKusy(p, 1) }, '+')),
-          h('button', { class: 'odkaz odebrat', type: 'button', onclick: () => odeber(p) }, 'odebrat')));
+          h('div', { class: 'druh' }, popisDruhu(p, d))),
+        h('button', { class: 'odkaz odebrat', type: 'button', onclick: () => odeber(p) }, 'odebrat'));
     }));
-    const prazdny = !S.kosik.length;
-    $('[data-kosik-prazdny]', kosikOkno).hidden = !prazdny;
-    $('[data-formular]', kosikOkno).hidden = prazdny;
-    if (prazdny) return;
-
-    const doprava = $('[data-doprava]', kosikOkno);
-    if (!doprava.querySelector('input')) {
-      const moznosti = S.obchod.doprava && S.obchod.doprava.length ? S.obchod.doprava : [{ nazev: 'Domluvíme se', cena: 0 }];
-      if (!S.obchod.doprava || !S.obchod.doprava.length) S.obchod.doprava = moznosti;
-      doprava.append(...moznosti.map((m, i) => h('label', { class: 'volba' },
-        h('input', { type: 'radio', name: 'doprava', value: i, checked: i === 0, onchange: prepocitej }),
-        h('span', {}, m.nazev),
-        h('span', { class: 'cena' }, m.cena > 0 ? cena(m.cena) : 'zdarma'))));
-      const platby = zpusobyPlatby();
-      const platba = $('[data-platba]', kosikOkno);
-      platba.hidden = !platby.length;
-      platba.append(...platby.map((p, i) => h('label', { class: 'volba' },
-        h('input', { type: 'radio', name: 'platba', value: p.kod, checked: i === 0 }),
-        h('span', {}, p.nazev))));
-    }
-    prepocitej();
-  }
-
-  function prepocitej() {
-    const doprava = vybranaDoprava();
-    const zasilka = !!(doprava && doprava.adresa);
-    $('[data-adresa]', kosikOkno).hidden = !zasilka;
-    // hotově se dá platit jen při osobním převzetí
-    const platby = $$('[name="platba"]', kosikOkno);
-    platby.forEach((p) => { p.closest('label').hidden = zasilka && p.value === 'hotove'; });
-    const viditelne = platby.filter((p) => !p.closest('label').hidden);
-    if (viditelne.length && !viditelne.some((p) => p.checked)) viditelne[0].checked = true;
-    $('[data-platba]', kosikOkno).hidden = !viditelne.length;
-    const celkem = S.kosik.reduce((s, p) => s + cenaPolozky(p), 0) + ((doprava && doprava.cena) || 0);
-    $('[data-celkem]', kosikOkno).textContent = cena(celkem);
-    return celkem;
-  }
-
-  function zmenKusy(p, o) {
-    p.ks = Math.max(1, Math.min(MAX_KUSU, p.ks + o));
-    ulozKosik();
-    vykresliKosik();
+    const prazdny = !S.vyber.length;
+    $('[data-zajem-prazdny]', zajemOkno).hidden = !prazdny;
+    $('[data-zajem-uvod]', zajemOkno).hidden = prazdny;
+    $('[data-formular]', zajemOkno).hidden = prazdny;
   }
 
   function odeber(p) {
-    S.kosik = S.kosik.filter((x) => x !== p);
-    ulozKosik();
-    vykresliKosik();
+    S.vyber = S.vyber.filter((x) => x !== p);
+    ulozVyber();
+    vykresliVyber();
   }
 
-  // --- objednávka -----------------------------------------------------------
   function odesli(e) {
     e.preventDefault();
     const form = e.target;
-    const chyba = $('[data-chyba]', kosikOkno);
-    const doprava = vybranaDoprava();
+    const chyba = $('[data-chyba]', zajemOkno);
     const hodnota = (n) => form.elements[n].value.trim();
     let problem = '';
     if (!hodnota('jmeno')) problem = 'Vyplňte prosím jméno.';
     else if (!hodnota('email') || !form.elements.email.checkValidity()) problem = 'Zkontrolujte prosím e-mail.';
-    else if (doprava && doprava.adresa && !hodnota('adresa')) problem = 'Pro zaslání potřebujeme doručovací adresu.';
     chyba.textContent = problem;
     chyba.hidden = !problem;
     if (problem) return;
 
-    const ted = new Date();
-    const dva = (n) => String(n).padStart(2, '0');
-    const vs = String(ted.getFullYear()).slice(2) + dva(ted.getMonth() + 1) + dva(ted.getDate()) + dva(ted.getHours()) + dva(ted.getMinutes());
-    const zvolena = $$('[name="platba"]', form).find((p) => p.checked && !p.closest('label').hidden);
-    const platbaKod = zvolena ? zvolena.value : '';
-    const celkem = prepocitej();
     const nazevWebu = S.nastaveni.nazev || 'Galerie';
-    const radky = [
-      `Objednávka č. ${vs}`,
-      `Datum: ${ted.toLocaleDateString('cs-CZ')}`,
+    const text = [
+      'Dobrý den,',
       '',
-      'Položky:',
-      ...S.kosik.map((p) => {
+      S.vyber.length > 1 ? 'mám zájem o tato díla:' : 'mám zájem o toto dílo:',
+      ...S.vyber.map((p) => {
         const d = najdi(p.id);
-        const druh = p.druh === 'original' ? 'originál' : `tisk${p.ks > 1 ? ' × ' + p.ks : ''}`;
-        return `- ${d.nazev} — ${druh}: ${cena(cenaPolozky(p))}`;
+        return `- ${d.nazev} (${popisDruhu(p, d)}) — ${odkazNaDilo(d.id)}`;
       }),
-      doprava ? `Doprava: ${doprava.nazev}: ${doprava.cena > 0 ? cena(doprava.cena) : 'zdarma'}` : null,
-      `Celkem: ${cena(celkem)}`,
       '',
-      platbaKod === 'prevod' ? `Platba: převodem na účet ${S.obchod.ucet}, variabilní symbol ${vs}` : null,
-      platbaKod === 'hotove' ? 'Platba: hotově při převzetí' : null,
-      !platbaKod ? 'Platba: domluvíme se' : null,
-      platbaKod === 'prevod' ? '(Zaplatím až po potvrzení objednávky.)' : null,
-      '',
-      `Jméno: ${hodnota('jmeno')}`,
+      hodnota('zprava') || null,
+      hodnota('zprava') ? '' : null,
+      hodnota('jmeno'),
       `E-mail: ${hodnota('email')}`,
-      hodnota('telefon') && `Telefon: ${hodnota('telefon')}`,
-      doprava && doprava.adresa && `Adresa: ${hodnota('adresa').replace(/\n+/g, ', ')}`,
-      hodnota('poznamka') && `Poznámka: ${hodnota('poznamka')}`,
-    ].filter((r) => r != null && r !== false);
-    const text = radky.join('\n');
+      hodnota('telefon') ? `Telefon: ${hodnota('telefon')}` : null,
+    ].filter((r) => r != null).join('\n');
 
-    $('[data-rekapitulace]', kosikOkno).textContent = text;
+    $('[data-rekapitulace]', zajemOkno).textContent = text;
     const email = S.nastaveni.email || '';
-    const odkaz = $('[data-mailto]', kosikOkno);
-    odkaz.href = mailto(email, `Objednávka č. ${vs} — ${nazevWebu}`, text, hodnota('email'));
-    const emailProdejce = $('[data-email-prodejce]', kosikOkno);
-    emailProdejce.textContent = email;
-    emailProdejce.href = 'mailto:' + email;
+    const predmet = S.vyber.length === 1 ? `Zájem o dílo „${najdi(S.vyber[0].id).nazev}“` : `Zájem o díla — ${nazevWebu}`;
+    const odkaz = $('[data-mailto]', zajemOkno);
+    odkaz.href = mailto(email, predmet, text, hodnota('email'));
+    const emailAutorky = $('[data-email-autorky]', zajemOkno);
+    emailAutorky.textContent = email;
+    emailAutorky.href = 'mailto:' + email;
     odkaz.hidden = !email;
-    $('[data-zalozni-postup]', kosikOkno).hidden = !email;
-    $('[data-bez-emailu]', kosikOkno).hidden = !!email;
-    $('[data-kopirovat]', kosikOkno).onclick = () => kopiruj(text, 'Text objednávky je ve schránce');
-    $('[data-platebni]', kosikOkno).replaceChildren(...(platbaKod === 'prevod' ? platebniUdaje(celkem, vs) : []));
-    $('[data-platebni]', kosikOkno).hidden = platbaKod !== 'prevod';
+    $('[data-zalozni-postup]', zajemOkno).hidden = !email;
+    $('[data-bez-emailu]', zajemOkno).hidden = !!email;
+    $('[data-kopirovat]', zajemOkno).onclick = () => kopiruj(text, 'Text zprávy je ve schránce');
     ukazKrok('odeslat');
-    kosikOkno.querySelector('.kosik-krok:not([hidden])').scrollTop = 0;
-  }
-
-  function platebniUdaje(castka, vs) {
-    const o = S.obchod;
-    const { iban } = G.qr.ucetNaIban(o.ucet);
-    const zprava = `Objednavka ${vs}`;
-    const radky = [
-      ['Účet', o.ucet],
-      ['Částka', cena(castka)],
-      ['VS', vs],
-      o.prijemce && ['Příjemce', o.prijemce],
-    ].filter(Boolean);
-    const dl = h('dl', {}, radky.map(([k, v]) => [h('dt', {}, k), h('dd', {}, v)]));
-    const prvky = [];
-    if (iban) prvky.push(G.qr.svg(G.qr.platba({ iban, castka, vs, zprava, prijemce: o.prijemce }), 'QR Platba'));
-    prvky.push(dl, h('p', { class: 'pozn' }, iban
-      ? 'QR kód naskenujte v aplikaci banky. Plaťte prosím až po našem potvrzení, že je dílo vaše.'
-      : 'Plaťte prosím až po našem potvrzení, že je dílo vaše.'));
-    return prvky;
+    zajemOkno.querySelector('.zajem-krok:not([hidden])').scrollTop = 0;
   }
 
   function mailto(komu, predmet, text, kopie) {
@@ -628,7 +510,7 @@
       if (e.key === 'ArrowRight') posun(1);
     });
     // klik do závoje kolem okna zavírá
-    [detail, kosikOkno].forEach((okno) => okno.addEventListener('click', (e) => { if (e.target === okno) okno.close(); }));
+    [detail, zajemOkno].forEach((okno) => okno.addEventListener('click', (e) => { if (e.target === okno) okno.close(); }));
 
     // přejetí prstem po obrázku
     const plocha = $('[data-detail-obraz]');
@@ -642,15 +524,15 @@
     });
     plocha.addEventListener('pointercancel', () => { zacatek = null; });
 
-    $('.kosik-tlacitko').onclick = otevriKosik;
-    $('[data-zavrit]', kosikOkno).onclick = () => kosikOkno.close();
-    $('[data-formular]', kosikOkno).addEventListener('submit', odesli);
-    $('[data-zpet]', kosikOkno).onclick = () => ukazKrok('polozky');
-    $('[data-hotovo]', kosikOkno).onclick = () => {
-      S.kosik = [];
-      ulozKosik();
-      $('[data-formular]', kosikOkno).reset();
-      kosikOkno.close();
+    $('[data-zajem]').onclick = otevriZajem;
+    $('[data-zavrit]', zajemOkno).onclick = () => zajemOkno.close();
+    $('[data-formular]', zajemOkno).addEventListener('submit', odesli);
+    $('[data-zpet]', zajemOkno).onclick = () => ukazKrok('vyber');
+    $('[data-hotovo]', zajemOkno).onclick = () => {
+      S.vyber = [];
+      ulozVyber();
+      $('[data-formular]', zajemOkno).reset();
+      zajemOkno.close();
       oznam('Děkujeme! Brzy se ozveme.');
     };
   }

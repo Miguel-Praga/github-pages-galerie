@@ -33,11 +33,6 @@ window.Galerie = (function () {
   const $ = (vyber, koren) => (koren || document).querySelector(vyber);
   const $$ = (vyber, koren) => Array.from((koren || document).querySelectorAll(vyber));
 
-  const formatCeny = new Intl.NumberFormat('cs-CZ', {
-    style: 'currency', currency: 'CZK', maximumFractionDigits: 0, minimumFractionDigits: 0,
-  });
-  const cena = (n) => formatCeny.format(Number(n) || 0);
-
   // Prázdný řádek dělí odstavce, jednoduchý zalomení zůstane zalomením.
   function odstavce(text) {
     return String(text || '').trim().split(/\n\s*\n/).filter(Boolean).map((odst) => {
@@ -52,10 +47,25 @@ window.Galerie = (function () {
 
   const STAVY = {
     vystaveno: 'Jen k vidění',
-    prodej: 'Na prodej',
+    dostupne: 'K dispozici',
     rezervovano: 'Rezervováno',
-    prodano: 'Prodáno',
+    sbirka: 'V soukromé sbírce',
   };
+
+  // Starší data znala „prodej“ a „prodáno“ — převedou se na dnešní stavy.
+  const STARE_STAVY = { prodej: 'dostupne', prodano: 'sbirka' };
+  const stavDila = (d) => STARE_STAVY[d.stav] || (STAVY[d.stav] ? d.stav : 'vystaveno');
+
+  const TEXT_ZAJMU = 'Pokud se vám některý obraz líbí, je možné ho zakoupit. V takovém případě mě prosím kontaktujte — vše domluvíme individuálně.';
+  function nastaveniZajmu(n) {
+    const stare = n && n.obchod;
+    return Object.assign({ zapnuto: !!(stare && stare.zapnuto), text: TEXT_ZAJMU }, n && n.zajem);
+  }
+
+  // Ocenění autorky — nepovinná částka v celých korunách; u díla
+  // v soukromé sbírce se neukazuje ani neukládá.
+  const maOceneni = (d) => Number.isInteger(d.oceneni) && d.oceneni > 0 && stavDila(d) !== 'sbirka';
+  const castka = (n) => new Intl.NumberFormat('cs-CZ').format(n) + ' Kč';
 
   function bezDiakritiky(text) {
     return String(text || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
@@ -104,9 +114,9 @@ window.Galerie = (function () {
   // z něj spočítají CSS proměnné a nastaví je přes style.setProperty —
   // to Content-Security-Policy dovoluje, vložený <style> by neprošel.
   const SPOLECNE = {
-    svetly: { prodej: '#2f6a5f', rezervace: '#a7741c', prodano: '#8a8178',
+    svetly: { dostupne: '#2f6a5f', rezervace: '#a7741c', sbirka: '#8a8178',
       stin: '0 1px 2px rgb(40 30 20 / 6%), 0 10px 30px -12px rgb(40 30 20 / 22%)' },
-    tmavy: { prodej: '#7cc0b1', rezervace: '#e0b25c', prodano: '#9a9085',
+    tmavy: { dostupne: '#7cc0b1', rezervace: '#e0b25c', sbirka: '#9a9085',
       stin: '0 1px 2px rgb(0 0 0 / 30%), 0 14px 34px -14px rgb(0 0 0 / 70%)' },
   };
 
@@ -217,7 +227,7 @@ window.Galerie = (function () {
   }
 
   return {
-    h, $, $$, cena, odstavce, STAVY, bezDiakritiky, slug, nahodne, precti, zapis, adresaObrazku,
+    h, $, $$, odstavce, STAVY, stavDila, TEXT_ZAJMU, nastaveniZajmu, maOceneni, castka, bezDiakritiky, slug, nahodne, precti, zapis, adresaObrazku,
     VZHLEDY, PISMA, tokenyVzhledu, pouzijVzhled,
   };
 })();

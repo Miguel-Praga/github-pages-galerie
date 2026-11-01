@@ -10,7 +10,6 @@
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="../css/sprava.css">
 <script src="../js/zaklad.js" defer></script>
-<script src="../js/qr.js" defer></script>
 <script src="../js/sprava-uloziste.js" defer></script>
 <script src="../js/sprava.js" defer></script>
 </head>
@@ -165,23 +164,15 @@
         </fieldset>
 
         <fieldset>
-          <legend>Obchod</legend>
-          <label class="zaskrt prepinac"><input type="checkbox" name="obchod.zapnuto"> Zapnout prodej (ceny, košík a objednávky e-mailem)</label>
-          <div class="obchod-pole" data-obchod-pole>
-            <div class="radek2">
-              <label>Číslo účtu <input name="obchod.ucet" placeholder="123456789/0800" autocomplete="off"></label>
-              <label>Jméno majitele účtu <input name="obchod.prijemce"></label>
-            </div>
-            <div class="ucet-kontrola" data-ucet-kontrola></div>
-            <label class="zaskrt"><input type="checkbox" name="obchod.hotove"> Nabízet i platbu hotově při převzetí</label>
-            <div class="doprava">
-              <p class="popisek">Způsoby předání</p>
-              <ul data-doprava></ul>
-              <button class="tl" type="button" data-pridat-dopravu>+ Přidat způsob</button>
-            </div>
-            <label>Jak nakupovat <span class="napoveda">ukáže se na webu v části „Jak nakoupit“</span>
-              <textarea name="obchod.podminky" rows="5"></textarea>
+          <legend>Zájem o díla</legend>
+          <label class="zaskrt prepinac"><input type="checkbox" name="zajem.zapnuto"> Nabízet díla k zakoupení</label>
+          <p class="napoveda">U dostupných děl se ukáže tlačítko „Mám zájem“ a v sekci Kontakt text níže. Návštěvník pošle zprávu
+            e-mailem, všechno ostatní se domlouvá individuálně. Vypnutím z webu zmizí všechno, co s prodejem souvisí.</p>
+          <div class="zajem-pole" data-zajem-pole>
+            <label>Text v sekci Kontakt
+              <textarea name="zajem.text" rows="3"></textarea>
             </label>
+            <div data-zajem-kontrola></div>
           </div>
         </fieldset>
 
@@ -270,21 +261,20 @@
       <div class="ucty">
         <div class="pruh info">
           <span>Účet = <strong>jméno a heslo</strong>, se kterými se do Správy přihlásíte z jakéhokoli zařízení.
-          Uvnitř účtu je zašifrovaný přístupový klíč ke GitHubu. <strong>Správkyně</strong> spravuje díla, texty, obchod a vzhled;
+          Uvnitř účtu je zašifrovaný přístupový klíč ke GitHubu. <strong>Správkyně</strong> spravuje díla, texty a vzhled;
           <strong>správce</strong> navíc účty a pokročilé nastavení.</span>
         </div>
+        <p class="pruh varovani-pruh"><span><strong>Přihlašovací jméno je veřejně čitelné</strong> v datech webu
+          (heslo nikde uložené není). Zvolte jméno, které neprozradí, o koho jde — třeba „spravkyne“ nebo přezdívku.</span></p>
         <ul class="ucty-seznam" data-ucty-seznam></ul>
         <p class="napoveda" data-ucty-prazdne hidden>Zatím tu není žádný účet.</p>
 
         <form class="nastaveni" data-ucet-formular novalidate>
           <fieldset>
             <legend data-ucet-nadpis>Nový účet</legend>
-            <div class="radek2">
-              <label>Přihlašovací jméno <span class="napoveda">malá písmena bez diakritiky</span>
-                <input name="jmeno" autocapitalize="none" spellcheck="false" autocomplete="off" placeholder="jana">
-              </label>
-              <label>Zobrazované jméno <input name="zobrazit" autocomplete="off" placeholder="Jana"></label>
-            </div>
+            <label>Přihlašovací jméno <span class="napoveda">malá písmena bez diakritiky; veřejně čitelné</span>
+              <input name="jmeno" autocapitalize="none" spellcheck="false" autocomplete="off" placeholder="spravkyne">
+            </label>
             <div class="volba">
               <span class="popisek">Role</span>
               <div class="segment" role="radiogroup" aria-label="Role">
@@ -370,21 +360,20 @@
         <label>Série <span class="napoveda">podle ní se dá na webu filtrovat</span> <input name="serie" list="serie"></label>
         <label>Popis <textarea name="popis" rows="5"></textarea></label>
 
-        <fieldset class="prodej" data-prodej>
-          <legend>Prodej</legend>
-          <div class="segment" role="radiogroup" aria-label="Stav originálu">
+        <fieldset class="prodej" data-dostupnost>
+          <legend>Dostupnost</legend>
+          <div class="segment" role="radiogroup" aria-label="Dostupnost originálu">
             <label><input type="radio" name="stav" value="vystaveno"> Jen k vidění</label>
-            <label><input type="radio" name="stav" value="prodej"> Na prodej</label>
+            <label><input type="radio" name="stav" value="dostupne"> K dispozici</label>
             <label><input type="radio" name="stav" value="rezervovano"> Rezervováno</label>
-            <label><input type="radio" name="stav" value="prodano"> Prodáno</label>
+            <label><input type="radio" name="stav" value="sbirka"> V soukromé sbírce</label>
           </div>
-          <label class="kratke">Cena originálu (Kč) <input name="cena" type="number" min="0" step="50" inputmode="numeric"></label>
-          <label class="zaskrt"><input type="checkbox" name="tiskZapnuto"> Nabízet i tisky</label>
-          <div class="radek2" data-tisk-pole>
-            <label>Cena tisku (Kč) <input name="tiskCena" type="number" min="0" step="10" inputmode="numeric"></label>
-            <label>Popis tisku <input name="tiskPopis" placeholder="A4, matný fine-art papír"></label>
-          </div>
-          <p class="napoveda" data-obchod-vypnuty hidden>Prodej je v Nastavení vypnutý — ceny se na webu zatím neukazují.</p>
+          <label data-oceneni-pole>Ocenění autorky <span class="napoveda">nepovinné, v korunách — na webu se ukáže v detailu díla</span>
+            <input name="oceneni" inputmode="numeric" autocomplete="off" placeholder="např. 4 500">
+            <span class="napoveda varovani" data-oceneni-chyba hidden>Zadejte částku v celých korunách, třeba 4500.</span></label>
+          <label class="zaskrt"><input type="checkbox" name="tiskZapnuto"> Nabízet i tisky (reprodukce)</label>
+          <label data-tisk-pole>Popis tisku <input name="tiskPopis" placeholder="A4, matný fine-art papír"></label>
+          <p class="napoveda" data-zajem-vypnuty hidden>Zájem o díla je v Nastavení vypnutý — na webu se dostupnost zatím neukazuje.</p>
         </fieldset>
 
         <div class="zaskrtnuti">
